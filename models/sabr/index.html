@@ -1,0 +1,1370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SABR Model - Interactive Volatility Smile Dashboard</title>
+<style>
+/* ── Reset & Base ───────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+    --bg:        #0d1117;
+    --surface:   #161b22;
+    --border:    #30363d;
+    --text:      #e6edf3;
+    --muted:     #8b949e;
+    --accent:    #ff7b72;
+    --accent-dim:#f85149;
+    --green:     #3fb950;
+    --blue:      #58a6ff;
+    --purple:    #bc8cff;
+    --yellow:    #d29922;
+    --cyan:      #39d353;
+    --orange:    #f0883e;
+    --radius:    10px;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+    min-height: 100vh;
+}
+
+/* ── Header ─────────────────────────────────────────────────── */
+.page-header {
+    background: linear-gradient(180deg, rgba(255,123,114,0.08) 0%, transparent 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 32px 24px;
+}
+.page-header .inner { max-width: 1440px; margin: 0 auto; }
+.breadcrumb { font-size: 13px; color: var(--muted); margin-bottom: 12px; }
+.breadcrumb a { color: var(--accent); text-decoration: none; }
+.breadcrumb a:hover { text-decoration: underline; }
+.title-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.title-badge {
+    font-size: 12px; font-weight: 600; padding: 3px 10px;
+    border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px;
+}
+.badge-advanced { background: rgba(188,140,255,0.15); border: 1px solid rgba(188,140,255,0.3); color: var(--purple); }
+.badge-year { background: rgba(88,166,255,0.15); border: 1px solid rgba(88,166,255,0.3); color: var(--blue); }
+h1 {
+    font-size: 32px; font-weight: 700;
+    background: linear-gradient(135deg, #fff, #ccc);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.subtitle { font-size: 15px; color: var(--muted); margin-top: 6px; max-width: 720px; }
+
+/* ── Formula Banner ──────────────────────────────────────────── */
+.formula-banner {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 20px 28px; margin-top: 20px; display: inline-block;
+    font-family: 'Cambria Math', 'Latin Modern Math', Georgia, serif; font-size: 18px;
+}
+.formula-banner .eq-label {
+    font-family: -apple-system, sans-serif; font-size: 11px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 8px;
+}
+.formula-banner .line { display: block; margin-bottom: 4px; }
+.hl  { color: var(--accent); }
+.hl2 { color: var(--blue); }
+.hl3 { color: var(--green); }
+.hl4 { color: var(--purple); }
+
+/* ── Layout ──────────────────────────────────────────────────── */
+.dashboard {
+    max-width: 1440px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: 320px 1fr; gap: 24px;
+}
+@media (max-width: 960px) { .dashboard { grid-template-columns: 1fr; } }
+
+.card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px; transition: border-color 0.2s;
+}
+.card:hover { border-color: #484f58; }
+.card h2 {
+    font-size: 14px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.8px; color: var(--muted); margin-bottom: 16px;
+    display: flex; align-items: center; gap: 8px;
+}
+.card h2 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); display: inline-block; }
+
+/* ── Inputs Panel ────────────────────────────────────────────── */
+.inputs-panel { display: flex; flex-direction: column; gap: 20px; }
+
+.input-group { margin-bottom: 6px; }
+.input-group label {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: 13px; color: var(--muted); margin-bottom: 6px;
+}
+.input-group label .val {
+    font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px; color: var(--text); font-weight: 600;
+}
+.input-group .param-desc {
+    font-size: 11px; color: #6e7681; margin-top: 2px; margin-bottom: 4px;
+}
+input[type="range"] {
+    -webkit-appearance: none; width: 100%; height: 6px;
+    border-radius: 3px; background: var(--border); outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%;
+    background: var(--accent); cursor: pointer; border: 2px solid var(--bg);
+    box-shadow: 0 0 8px rgba(255,123,114,0.4); transition: transform 0.15s;
+}
+input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.15); }
+input[type="range"]::-moz-range-thumb {
+    width: 18px; height: 18px; border-radius: 50%;
+    background: var(--accent); cursor: pointer; border: 2px solid var(--bg);
+}
+
+/* Alpha slider accent */
+.slider-alpha::-webkit-slider-thumb { background: var(--accent) !important; box-shadow: 0 0 8px rgba(255,123,114,0.4) !important; }
+.slider-beta::-webkit-slider-thumb  { background: var(--blue) !important;   box-shadow: 0 0 8px rgba(88,166,255,0.4) !important; }
+.slider-rho::-webkit-slider-thumb   { background: var(--green) !important;  box-shadow: 0 0 8px rgba(63,185,80,0.4) !important; }
+.slider-nu::-webkit-slider-thumb    { background: var(--purple) !important; box-shadow: 0 0 8px rgba(188,140,255,0.4) !important; }
+
+/* ── Preset Buttons ──────────────────────────────────────────── */
+.preset-row {
+    display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px;
+}
+.preset-btn {
+    flex: 1; min-width: 90px;
+    background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 10px; text-align: center;
+    color: var(--muted); font-size: 12px; font-weight: 500;
+    cursor: pointer; transition: all 0.2s;
+}
+.preset-btn:hover {
+    border-color: var(--accent); color: var(--text);
+    background: rgba(255,123,114,0.08);
+}
+.preset-btn.active {
+    border-color: var(--accent); color: var(--accent);
+    background: rgba(255,123,114,0.1);
+}
+
+/* ── Toggle ──────────────────────────────────────────────────── */
+.toggle-row {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px; color: var(--muted); margin-top: 8px;
+}
+.toggle-switch {
+    position: relative; width: 36px; height: 20px;
+    background: var(--border); border-radius: 10px; cursor: pointer;
+    transition: background 0.2s;
+}
+.toggle-switch.on { background: var(--accent); }
+.toggle-switch .knob {
+    position: absolute; top: 2px; left: 2px;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: #fff; transition: left 0.2s;
+}
+.toggle-switch.on .knob { left: 18px; }
+
+/* ── Parameter Effect Badges ─────────────────────────────────── */
+.param-effects {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px;
+}
+.effect-badge {
+    background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+    border-radius: 6px; padding: 8px 10px; text-align: center;
+}
+.effect-badge .effect-param {
+    font-size: 16px; font-weight: 700; margin-bottom: 2px;
+}
+.effect-badge .effect-desc {
+    font-size: 10px; color: #6e7681; line-height: 1.3;
+}
+
+/* ── Main Area ───────────────────────────────────────────────── */
+.main-area { display: flex; flex-direction: column; gap: 24px; }
+.chart-row {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 24px;
+}
+@media (max-width: 1100px) { .chart-row { grid-template-columns: 1fr; } }
+
+canvas { width: 100%; display: block; }
+
+/* ── ATM Vol Display ─────────────────────────────────────────── */
+.atm-display {
+    display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 12px;
+}
+.atm-pill {
+    background: rgba(255,123,114,0.08); border: 1px solid rgba(255,123,114,0.2);
+    border-radius: 8px; padding: 8px 16px; text-align: center;
+}
+.atm-pill .atm-label {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted);
+}
+.atm-pill .atm-val {
+    font-family: 'SF Mono', monospace; font-size: 20px; font-weight: 700; color: var(--accent);
+}
+
+/* ── Hagan Formula Display ───────────────────────────────────── */
+.hagan-box {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 24px; margin-top: 24px; max-width: 1440px; margin-left: auto; margin-right: auto;
+}
+.hagan-box h3 {
+    font-size: 16px; font-weight: 600; color: var(--accent); margin-bottom: 16px;
+}
+.hagan-formula {
+    font-family: 'Cambria Math', 'Latin Modern Math', Georgia, serif;
+    font-size: 15px; line-height: 2.2; color: #c9d1d9;
+    overflow-x: auto; padding: 16px; background: rgba(0,0,0,0.3); border-radius: 8px;
+}
+.hagan-formula .line { display: block; }
+
+/* ── Educational Grid ────────────────────────────────────────── */
+.edu-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 24px;
+    max-width: 1440px; margin: 24px auto 0; padding: 0 24px;
+}
+@media (max-width: 900px) { .edu-grid { grid-template-columns: 1fr; } }
+.edu-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 24px;
+}
+.edu-card h3 { font-size: 16px; font-weight: 600; margin-bottom: 12px; color: var(--accent); }
+.edu-card p, .edu-card li { font-size: 14px; color: #b1bac4; line-height: 1.7; }
+.edu-card ul { list-style: none; padding: 0; }
+.edu-card ul li { padding: 4px 0 4px 18px; position: relative; }
+.edu-card ul li::before {
+    content: ''; position: absolute; left: 0; top: 12px;
+    width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
+}
+
+/* ── Footer ──────────────────────────────────────────────────── */
+.page-footer {
+    text-align: center; padding: 32px 24px; color: var(--muted);
+    font-size: 13px; border-top: 1px solid var(--border); margin-top: 40px;
+}
+.page-footer a { color: var(--accent); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ HEADER ═══════════════════════════════════ -->
+<header class="page-header">
+    <div class="inner">
+        <div class="breadcrumb">
+            <a href="../../">FI Model Zoo</a> &nbsp;/&nbsp; <a href="../../#volatility">Volatility</a> &nbsp;/&nbsp; SABR
+        </div>
+        <div class="title-row">
+            <h1>SABR Model</h1>
+            <span class="title-badge badge-advanced">Advanced</span>
+            <span class="title-badge badge-year">2002</span>
+        </div>
+        <p class="subtitle">
+            A stochastic volatility model capturing the smile/skew through correlated forward rate and volatility dynamics.
+            Four parameters (&alpha;, &beta;, &rho;, &nu;) capture the entire vol surface dynamics.
+        </p>
+        <div class="formula-banner">
+            <span class="eq-label">SABR Stochastic Dynamics</span>
+            <span class="line">d<span class="hl">F</span> = <span class="hl">&sigma;&#770;</span> <span class="hl">F</span><sup><span class="hl2">&beta;</span></sup> d<span class="hl3">W</span><sub>1</sub></span>
+            <span class="line">d<span class="hl">&sigma;&#770;</span> = <span class="hl4">&nu;</span> <span class="hl">&sigma;&#770;</span> d<span class="hl3">W</span><sub>2</sub>
+            &nbsp;&nbsp;&nbsp;
+            <span style="font-size:13px;color:var(--muted);font-family:sans-serif;">with</span>&nbsp;
+            d<span class="hl3">W</span><sub>1</sub> &middot; d<span class="hl3">W</span><sub>2</sub> = <span class="hl3">&rho;</span> dt
+            </span>
+        </div>
+    </div>
+</header>
+
+<!-- ═══════════════ DASHBOARD ════════════════════════════════ -->
+<div class="dashboard">
+
+    <!-- ─── LEFT: CONTROLS ──────────────────────────────────── -->
+    <div class="inputs-panel">
+
+        <!-- SABR Parameters -->
+        <div class="card">
+            <h2><span class="dot"></span> SABR Parameters</h2>
+
+            <div class="input-group">
+                <label>&alpha; (Alpha) &mdash; ATM vol level <span class="val" id="valAlpha">0.200</span></label>
+                <div class="param-desc">Initial stochastic volatility. Higher &alpha; shifts the entire smile up.</div>
+                <input type="range" class="slider-alpha" id="sliderAlpha" min="0.01" max="1.0" step="0.005" value="0.20">
+            </div>
+
+            <div class="input-group">
+                <label>&beta; (Beta) &mdash; CEV backbone <span class="val" id="valBeta">0.50</span></label>
+                <div class="param-desc">&beta;=0: normal model. &beta;=0.5: CIR-like. &beta;=1: lognormal (Black).</div>
+                <input type="range" class="slider-beta" id="sliderBeta" min="0.0" max="1.0" step="0.01" value="0.50">
+            </div>
+
+            <div class="input-group">
+                <label>&rho; (Rho) &mdash; Skew direction <span class="val" id="valRho">-0.25</span></label>
+                <div class="param-desc">Correlation between forward and vol. Negative &rho; creates downward skew.</div>
+                <input type="range" class="slider-rho" id="sliderRho" min="-0.99" max="0.99" step="0.01" value="-0.25">
+            </div>
+
+            <div class="input-group">
+                <label>&nu; (Nu) &mdash; Vol-of-vol <span class="val" id="valNu">0.40</span></label>
+                <div class="param-desc">Controls curvature of the smile. Higher &nu; lifts the wings.</div>
+                <input type="range" class="slider-nu" id="sliderNu" min="0.01" max="1.5" step="0.01" value="0.40">
+            </div>
+        </div>
+
+        <!-- Market Parameters -->
+        <div class="card">
+            <h2><span class="dot"></span> Market Parameters</h2>
+
+            <div class="input-group">
+                <label>Forward Rate (F) <span class="val" id="valF">5.00%</span></label>
+                <input type="range" id="sliderF" min="0.5" max="12" step="0.1" value="5.0">
+            </div>
+            <div class="input-group">
+                <label>Expiry (T) <span class="val" id="valT">5.0 yr</span></label>
+                <input type="range" id="sliderT" min="0.25" max="30" step="0.25" value="5.0">
+            </div>
+        </div>
+
+        <!-- Presets -->
+        <div class="card">
+            <h2><span class="dot"></span> Presets</h2>
+            <div class="preset-row">
+                <button class="preset-btn" id="presetEquity" onclick="applyPreset('equity')">
+                    Equity-like<br>Skew
+                </button>
+                <button class="preset-btn" id="presetNormal" onclick="applyPreset('normal')">
+                    Rates<br>Normal
+                </button>
+                <button class="preset-btn" id="presetFat" onclick="applyPreset('fat')">
+                    Fat<br>Tails
+                </button>
+            </div>
+            <div class="preset-row" style="margin-top:8px;">
+                <button class="preset-btn" id="presetFlat" onclick="applyPreset('flat')">
+                    Flat Vol<br>(Black)
+                </button>
+                <button class="preset-btn" id="presetSymm" onclick="applyPreset('symmetric')">
+                    Symmetric<br>Smile
+                </button>
+                <button class="preset-btn" id="presetSteep" onclick="applyPreset('steep')">
+                    Steep<br>Skew
+                </button>
+            </div>
+        </div>
+
+        <!-- Display Options -->
+        <div class="card">
+            <h2><span class="dot"></span> Display Options</h2>
+            <div class="toggle-row">
+                <div class="toggle-switch on" id="toggleBlack" onclick="toggleOption('black')">
+                    <div class="knob"></div>
+                </div>
+                <span>Show Black flat vol overlay</span>
+            </div>
+            <div class="toggle-row">
+                <div class="toggle-switch on" id="toggleDensity" onclick="toggleOption('density')">
+                    <div class="knob"></div>
+                </div>
+                <span>Show implied density</span>
+            </div>
+            <div class="toggle-row">
+                <div class="toggle-switch" id="toggleLogStrike" onclick="toggleOption('logstrike')">
+                    <div class="knob"></div>
+                </div>
+                <span>Log-moneyness x-axis</span>
+            </div>
+        </div>
+
+        <!-- Parameter Effects -->
+        <div class="card">
+            <h2><span class="dot"></span> What Each Parameter Controls</h2>
+            <div class="param-effects">
+                <div class="effect-badge">
+                    <div class="effect-param" style="color:var(--accent);">&alpha;</div>
+                    <div class="effect-desc">ATM level<br>Shifts smile up/down</div>
+                </div>
+                <div class="effect-badge">
+                    <div class="effect-param" style="color:var(--blue);">&beta;</div>
+                    <div class="effect-desc">Backbone<br>CEV exponent</div>
+                </div>
+                <div class="effect-badge">
+                    <div class="effect-param" style="color:var(--green);">&rho;</div>
+                    <div class="effect-desc">Skew direction<br>Tilts left/right</div>
+                </div>
+                <div class="effect-badge">
+                    <div class="effect-param" style="color:var(--purple);">&nu;</div>
+                    <div class="effect-desc">Curvature<br>Lifts wings</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── RIGHT: VISUALIZATIONS ───────────────────────────── -->
+    <div class="main-area">
+
+        <!-- ATM Summary -->
+        <div class="atm-display">
+            <div class="atm-pill">
+                <div class="atm-label">ATM Implied Vol</div>
+                <div class="atm-val" id="atmVol">--</div>
+            </div>
+            <div class="atm-pill" style="border-color:rgba(88,166,255,0.2);background:rgba(88,166,255,0.06);">
+                <div class="atm-label">25&Delta; Skew</div>
+                <div class="atm-val" id="skew25d" style="color:var(--blue);">--</div>
+            </div>
+            <div class="atm-pill" style="border-color:rgba(188,140,255,0.2);background:rgba(188,140,255,0.06);">
+                <div class="atm-label">Smile Curvature</div>
+                <div class="atm-val" id="curvature" style="color:var(--purple);">--</div>
+            </div>
+            <div class="atm-pill" style="border-color:rgba(63,185,80,0.2);background:rgba(63,185,80,0.06);">
+                <div class="atm-label">Risk Reversal</div>
+                <div class="atm-val" id="riskReversal" style="color:var(--green);">--</div>
+            </div>
+        </div>
+
+        <!-- THE SHOWPIECE: Volatility Smile -->
+        <div class="card" style="border-color:rgba(255,123,114,0.25);">
+            <h2><span class="dot" style="width:10px;height:10px;"></span> Volatility Smile</h2>
+            <canvas id="smileChart" height="380"></canvas>
+        </div>
+
+        <div class="chart-row">
+            <!-- Implied Density -->
+            <div class="card">
+                <h2><span class="dot"></span> Implied Probability Density</h2>
+                <canvas id="densityChart" height="300"></canvas>
+            </div>
+
+            <!-- Parameter Sensitivity -->
+            <div class="card">
+                <h2><span class="dot"></span> Smile Decomposition</h2>
+                <canvas id="decompChart" height="300"></canvas>
+            </div>
+        </div>
+
+        <!-- Volatility Surface (Term Structure) -->
+        <div class="card">
+            <h2><span class="dot"></span> Volatility Surface: Strike &times; Expiry</h2>
+            <canvas id="surfaceChart" height="340"></canvas>
+            <div style="display:flex;justify-content:center;gap:24px;margin-top:10px;font-size:12px;color:var(--muted);">
+                <span>X: Strike &rarr;</span>
+                <span>Y: Expiry &rarr;</span>
+                <span style="color:var(--accent);">Color: Implied Vol</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════ HAGAN FORMULA ════════════════════════════ -->
+<div style="max-width:1440px;margin:0 auto;padding:0 24px;">
+    <div class="hagan-box">
+        <h3>Hagan et al. (2002) Approximation Formula</h3>
+        <div class="hagan-formula">
+            <span class="line"><span class="hl">&sigma;</span><sub>B</sub>(K, F) =
+                <span class="hl">&alpha;</span> &middot;
+                <sup>z</sup>&frasl;<sub>x(z)</sub> &middot;
+                { 1 + [
+                    <sup>(1&minus;<span class="hl2">&beta;</span>)&sup2;</sup>&frasl;<sub>24</sub> &middot;
+                    <sup><span class="hl">&alpha;</span>&sup2;</sup>&frasl;<sub>(FK)<sup>1&minus;<span class="hl2">&beta;</span></sup></sub>
+                    + <sup><span class="hl3">&rho;</span><span class="hl2">&beta;</span><span class="hl4">&nu;</span><span class="hl">&alpha;</span></sup>&frasl;<sub>4(FK)<sup>(1&minus;<span class="hl2">&beta;</span>)/2</sup></sub>
+                    + <sup>(2&minus;3<span class="hl3">&rho;</span>&sup2;)<span class="hl4">&nu;</span>&sup2;</sup>&frasl;<sub>24</sub>
+                ] &middot; T }
+            </span>
+            <span class="line" style="margin-top:8px;font-size:14px;color:var(--muted);">
+                where &nbsp; z = <sup><span class="hl4">&nu;</span></sup>&frasl;<sub><span class="hl">&alpha;</span></sub> &middot; (FK)<sup>(1&minus;<span class="hl2">&beta;</span>)/2</sup> &middot; ln(F/K)
+                &nbsp;&nbsp;&nbsp;
+                x(z) = ln[ (<sup>&radic;(1&minus;2<span class="hl3">&rho;</span>z+z&sup2;) + z &minus; <span class="hl3">&rho;</span></sup>) &frasl; <sub>(1&minus;<span class="hl3">&rho;</span>)</sub> ]
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════ EDUCATIONAL ══════════════════════════════ -->
+<div class="edu-grid">
+    <div class="edu-card">
+        <h3>Why SABR?</h3>
+        <p style="margin-bottom:12px;">
+            The Black model assumes volatility is constant across strikes &mdash; but real markets show a
+            <strong style="color:var(--text);">volatility smile</strong>. Out-of-the-money options trade at different
+            implied vols than ATM options. SABR was built specifically to:
+        </p>
+        <ul>
+            <li>Capture the empirically observed smile and skew in interest rate markets</li>
+            <li>Provide an analytically tractable approximation (Hagan formula)</li>
+            <li>Allow traders to interpolate and extrapolate the vol surface consistently</li>
+            <li>Maintain arbitrage-free dynamics (under certain parameter constraints)</li>
+            <li>Give intuitive parameters that map to observable market features</li>
+        </ul>
+    </div>
+    <div class="edu-card">
+        <h3>The Four Parameters</h3>
+        <ul>
+            <li><strong style="color:var(--accent);">&alpha; (Alpha)</strong> &mdash; The initial level of stochastic volatility.
+                Directly controls the ATM implied vol level. Think of it as "where is the smile centered vertically?"</li>
+            <li><strong style="color:var(--blue);">&beta; (Beta)</strong> &mdash; The CEV exponent determining the backbone.
+                &beta;=0 gives a normal model (additive), &beta;=1 gives lognormal (Black). Often pre-set by convention.</li>
+            <li><strong style="color:var(--green);">&rho; (Rho)</strong> &mdash; Correlation between rate and vol shocks.
+                Negative &rho; creates a skew (lower strikes have higher vol). Controls asymmetry of the smile.</li>
+            <li><strong style="color:var(--purple);">&nu; (Nu)</strong> &mdash; Vol-of-vol. Controls the curvature of the smile.
+                Higher &nu; makes the wings steeper &mdash; out-of-the-money options become relatively more expensive.</li>
+        </ul>
+    </div>
+    <div class="edu-card">
+        <h3>SABR in Practice</h3>
+        <p style="margin-bottom:12px;">
+            In interest rate derivatives desks, SABR is the workhorse model for:
+        </p>
+        <ul>
+            <li><strong style="color:var(--text);">Swaption vol surfaces</strong> &mdash; calibrated per expiry/tenor pair</li>
+            <li><strong style="color:var(--text);">Cap/floor smiles</strong> &mdash; per caplet expiry</li>
+            <li><strong style="color:var(--text);">CMS pricing</strong> &mdash; convexity adjustments require the full smile</li>
+            <li><strong style="color:var(--text);">Risk management</strong> &mdash; smile delta and vega via parameter sensitivities</li>
+            <li><strong style="color:var(--text);">Exotic calibration</strong> &mdash; base layer for more complex models (LMM-SABR)</li>
+        </ul>
+    </div>
+    <div class="edu-card">
+        <h3>Key Insight</h3>
+        <p>
+            SABR's power lies in its <strong style="color:var(--text);">parsimonious parametrization</strong>.
+            With just four numbers (&alpha;, &beta;, &rho;, &nu;), you can capture the entire shape of the
+            volatility smile for a given expiry. This makes it ideal for:
+        </p>
+        <p style="margin-top:12px;">
+            <strong style="color:var(--accent);">Quoting conventions</strong> &mdash; Instead of quoting vol at every strike,
+            traders communicate SABR parameters. A complete smile is transmitted in four numbers.
+        </p>
+        <p style="margin-top:8px;">
+            <strong style="color:var(--accent);">Dynamic hedging</strong> &mdash; The model predicts how the smile moves
+            when rates move (the "backbone" dynamics), enabling more accurate delta hedging.
+        </p>
+    </div>
+</div>
+
+<footer class="page-footer">
+    <a href="../../">Fixed Income Model Zoo</a> &nbsp;&middot;&nbsp; Volatility &nbsp;&middot;&nbsp; SABR Model
+</footer>
+
+<!-- ═══════════════ JAVASCRIPT ═══════════════════════════════ -->
+<script>
+// ── Display Options State ───────────────────────────────────
+const displayOpts = { black: true, density: true, logstrike: false };
+
+function toggleOption(key) {
+    displayOpts[key] = !displayOpts[key];
+    const el = document.getElementById('toggle' + key.charAt(0).toUpperCase() + key.slice(1));
+    if (key === 'logstrike') {
+        const el2 = document.getElementById('toggleLogStrike');
+        el2.classList.toggle('on', displayOpts.logstrike);
+    } else {
+        el.classList.toggle('on', displayOpts[key]);
+    }
+    update();
+}
+
+// ── Presets ──────────────────────────────────────────────────
+const presets = {
+    equity:    { alpha: 0.30, beta: 0.70, rho: -0.60, nu: 0.50 },
+    normal:    { alpha: 0.50, beta: 0.00, rho: -0.10, nu: 0.30 },
+    fat:       { alpha: 0.25, beta: 0.50, rho: -0.20, nu: 0.90 },
+    flat:      { alpha: 0.20, beta: 1.00, rho:  0.00, nu: 0.01 },
+    symmetric: { alpha: 0.25, beta: 0.50, rho:  0.00, nu: 0.60 },
+    steep:     { alpha: 0.20, beta: 0.50, rho: -0.70, nu: 0.70 }
+};
+
+function applyPreset(name) {
+    const p = presets[name];
+    document.getElementById('sliderAlpha').value = p.alpha;
+    document.getElementById('sliderBeta').value  = p.beta;
+    document.getElementById('sliderRho').value   = p.rho;
+    document.getElementById('sliderNu').value    = p.nu;
+
+    // Highlight active
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+    const el = document.getElementById('preset' + name.charAt(0).toUpperCase() + name.slice(1));
+    if (el) el.classList.add('active');
+
+    update();
+}
+
+// ── SABR Hagan Implied Vol ──────────────────────────────────
+function sabrImpliedVol(F, K, T, alpha, beta, rho, nu) {
+    if (Math.abs(F - K) < 1e-10) {
+        // ATM formula
+        const Fb = Math.pow(F, 1 - beta);
+        const term1 = ((1 - beta) * (1 - beta) * alpha * alpha) / (24 * Fb * Fb);
+        const term2 = (rho * beta * nu * alpha) / (4 * Fb);
+        const term3 = ((2 - 3 * rho * rho) * nu * nu) / 24;
+        return (alpha / Math.pow(F, 1 - beta)) * (1 + (term1 + term2 + term3) * T);
+    }
+
+    const FK = F * K;
+    const lnFK = Math.log(F / K);
+    const FKbeta = Math.pow(FK, (1 - beta) / 2);
+
+    // z and x(z)
+    const z = (nu / alpha) * FKbeta * lnFK;
+    let xz;
+    if (Math.abs(z) < 1e-10) {
+        xz = 1;
+    } else {
+        const sqrtTerm = Math.sqrt(1 - 2 * rho * z + z * z);
+        xz = z / Math.log((sqrtTerm + z - rho) / (1 - rho));
+    }
+
+    // Main formula
+    const oneMBeta = 1 - beta;
+    const FKpow = Math.pow(FK, oneMBeta / 2);
+    const logFK2 = lnFK * lnFK;
+
+    const denom = FKpow * (1 + oneMBeta * oneMBeta * logFK2 / 24 + Math.pow(oneMBeta, 4) * logFK2 * logFK2 / 1920);
+
+    const corr1 = (oneMBeta * oneMBeta * alpha * alpha) / (24 * FK * Math.pow(FK, -beta));
+    const a2 = alpha * alpha;
+    const FKb = Math.pow(FK, (1-beta));
+    const corrTerm1 = (oneMBeta * oneMBeta / 24) * (a2 / FKb);
+    const corrTerm2 = (rho * beta * nu * alpha) / (4 * FKpow);
+    const corrTerm3 = (2 - 3 * rho * rho) * nu * nu / 24;
+
+    const vol = (alpha / denom) * xz * (1 + (corrTerm1 + corrTerm2 + corrTerm3) * T);
+
+    return Math.max(vol, 0.0001);
+}
+
+// ── Canvas Helper ───────────────────────────────────────────
+function setupCanvas(id, heightOverride) {
+    const c = document.getElementById(id);
+    const dpr = window.devicePixelRatio || 1;
+    const w = c.offsetWidth;
+    const h = heightOverride || parseInt(c.getAttribute('height'));
+    c.width  = w * dpr;
+    c.height = h * dpr;
+    c.style.width  = w + 'px';
+    c.style.height = h + 'px';
+    const ctx = c.getContext('2d');
+    ctx.scale(dpr, dpr);
+    return { ctx, w, h };
+}
+
+// ── Draw Volatility Smile ───────────────────────────────────
+function drawSmile(F, T, alpha, beta, rho, nu) {
+    const { ctx, w, h } = setupCanvas('smileChart');
+    ctx.clearRect(0, 0, w, h);
+
+    const pad = { top: 25, right: 30, bottom: 45, left: 65 };
+    const cw = w - pad.left - pad.right;
+    const ch = h - pad.top - pad.bottom;
+
+    // Strike range
+    const Fval = F / 100;
+    const kMin = Fval * 0.4;
+    const kMax = Fval * 1.8;
+    const numPoints = 300;
+
+    // Compute SABR vols
+    const strikes = [];
+    const vols = [];
+    let minVol = Infinity, maxVol = 0;
+
+    for (let i = 0; i <= numPoints; i++) {
+        const K = kMin + (kMax - kMin) * i / numPoints;
+        strikes.push(K);
+        const vol = sabrImpliedVol(Fval, K, T, alpha, beta, rho, nu);
+        vols.push(vol * 100); // As percentage
+        if (vol * 100 < minVol) minVol = vol * 100;
+        if (vol * 100 > maxVol) maxVol = vol * 100;
+    }
+
+    // ATM vol
+    const atmVol = sabrImpliedVol(Fval, Fval, T, alpha, beta, rho, nu) * 100;
+
+    // Y-axis range with padding
+    const volPad = (maxVol - minVol) * 0.2 + 1;
+    const yMin = Math.max(0, minVol - volPad);
+    const yMax = maxVol + volPad;
+
+    function xPos(K) {
+        if (displayOpts.logstrike) {
+            const lm = Math.log(K / Fval);
+            const lmMin = Math.log(kMin / Fval);
+            const lmMax = Math.log(kMax / Fval);
+            return pad.left + ((lm - lmMin) / (lmMax - lmMin)) * cw;
+        }
+        return pad.left + ((K - kMin) / (kMax - kMin)) * cw;
+    }
+    function yPos(v) { return pad.top + (1 - (v - yMin) / (yMax - yMin)) * ch; }
+
+    // Grid lines
+    ctx.strokeStyle = '#1b2028';
+    ctx.lineWidth = 1;
+    const yTicks = 6;
+    for (let i = 0; i <= yTicks; i++) {
+        const v = yMin + (yMax - yMin) * i / yTicks;
+        const y = yPos(v);
+        ctx.beginPath();
+        ctx.moveTo(pad.left, y);
+        ctx.lineTo(w - pad.right, y);
+        ctx.stroke();
+    }
+
+    // ATM vertical line
+    const atmX = xPos(Fval);
+    ctx.beginPath();
+    ctx.setLineDash([4, 4]);
+    ctx.strokeStyle = '#484f58';
+    ctx.moveTo(atmX, pad.top);
+    ctx.lineTo(atmX, pad.top + ch);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // ATM label
+    ctx.fillStyle = '#6e7681';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('ATM', atmX, pad.top - 8);
+
+    // Black flat vol overlay
+    if (displayOpts.black) {
+        ctx.beginPath();
+        ctx.moveTo(pad.left, yPos(atmVol));
+        ctx.lineTo(w - pad.right, yPos(atmVol));
+        ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([6, 4]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.fillStyle = 'rgba(255,255,255,0.3)';
+        ctx.font = '10px sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('Black flat vol', pad.left + 4, yPos(atmVol) - 6);
+    }
+
+    // Fill under smile curve
+    ctx.beginPath();
+    ctx.moveTo(xPos(strikes[0]), yPos(yMin));
+    for (let i = 0; i <= numPoints; i++) {
+        ctx.lineTo(xPos(strikes[i]), yPos(vols[i]));
+    }
+    ctx.lineTo(xPos(strikes[numPoints]), yPos(yMin));
+    ctx.closePath();
+    const grad = ctx.createLinearGradient(0, pad.top, 0, pad.top + ch);
+    grad.addColorStop(0, 'rgba(255,123,114,0.12)');
+    grad.addColorStop(1, 'rgba(255,123,114,0.01)');
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Draw smile curve
+    ctx.beginPath();
+    for (let i = 0; i <= numPoints; i++) {
+        const px = xPos(strikes[i]);
+        const py = yPos(vols[i]);
+        i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    }
+    ctx.strokeStyle = '#ff7b72';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // Glow effect
+    ctx.shadowColor = 'rgba(255,123,114,0.4)';
+    ctx.shadowBlur = 10;
+    ctx.beginPath();
+    for (let i = 0; i <= numPoints; i++) {
+        const px = xPos(strikes[i]);
+        const py = yPos(vols[i]);
+        i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    }
+    ctx.strokeStyle = 'rgba(255,123,114,0.3)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // ATM dot
+    ctx.beginPath();
+    ctx.arc(atmX, yPos(atmVol), 6, 0, Math.PI * 2);
+    ctx.fillStyle = '#ff7b72';
+    ctx.fill();
+    ctx.strokeStyle = '#0d1117';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Mark 25-delta points approximately
+    const k25c = Fval * 1.15;
+    const k25p = Fval * 0.85;
+    const vol25c = sabrImpliedVol(Fval, k25c, T, alpha, beta, rho, nu) * 100;
+    const vol25p = sabrImpliedVol(Fval, k25p, T, alpha, beta, rho, nu) * 100;
+
+    // 25d put marker
+    ctx.beginPath();
+    ctx.arc(xPos(k25p), yPos(vol25p), 4, 0, Math.PI * 2);
+    ctx.fillStyle = 'var(--blue)';
+    ctx.fillStyle = '#58a6ff';
+    ctx.fill();
+
+    // 25d call marker
+    ctx.beginPath();
+    ctx.arc(xPos(k25c), yPos(vol25c), 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#3fb950';
+    ctx.fill();
+
+    // Axis labels
+    ctx.fillStyle = '#6e7681';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'center';
+
+    // X-axis
+    const xTickCount = 8;
+    for (let i = 0; i <= xTickCount; i++) {
+        const K = kMin + (kMax - kMin) * i / xTickCount;
+        const x = xPos(K);
+        if (displayOpts.logstrike) {
+            const lm = Math.log(K / Fval);
+            ctx.fillText(lm.toFixed(2), x, h - pad.bottom + 18);
+        } else {
+            ctx.fillText((K * 100).toFixed(1) + '%', x, h - pad.bottom + 18);
+        }
+    }
+
+    // Y-axis
+    ctx.textAlign = 'right';
+    for (let i = 0; i <= yTicks; i++) {
+        const v = yMin + (yMax - yMin) * i / yTicks;
+        ctx.fillText(v.toFixed(1) + '%', pad.left - 8, yPos(v) + 4);
+    }
+
+    // Axis titles
+    ctx.fillStyle = '#8b949e';
+    ctx.font = '12px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(displayOpts.logstrike ? 'Log-Moneyness ln(K/F)' : 'Strike', pad.left + cw / 2, h - 6);
+
+    ctx.save();
+    ctx.translate(14, pad.top + ch / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText('Implied Volatility (%)', 0, 0);
+    ctx.restore();
+
+    // Legend
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'left';
+    const legX = w - pad.right - 140;
+    const legY = pad.top + 15;
+
+    ctx.fillStyle = '#ff7b72';
+    ctx.fillRect(legX, legY - 2, 14, 3);
+    ctx.fillStyle = '#8b949e';
+    ctx.fillText('SABR smile', legX + 20, legY + 3);
+
+    ctx.fillStyle = '#58a6ff';
+    ctx.beginPath();
+    ctx.arc(legX + 6, legY + 18, 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#8b949e';
+    ctx.fillText('25\u0394 put', legX + 20, legY + 22);
+
+    ctx.fillStyle = '#3fb950';
+    ctx.beginPath();
+    ctx.arc(legX + 6, legY + 35, 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#8b949e';
+    ctx.fillText('25\u0394 call', legX + 20, legY + 39);
+
+    return { atmVol, vol25c, vol25p, strikes, vols };
+}
+
+// ── Draw Implied Density ────────────────────────────────────
+function drawDensity(F, T, alpha, beta, rho, nu) {
+    const { ctx, w, h } = setupCanvas('densityChart');
+    ctx.clearRect(0, 0, w, h);
+
+    if (!displayOpts.density) {
+        ctx.fillStyle = '#6e7681';
+        ctx.font = '14px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Enable "Show implied density" to view', w / 2, h / 2);
+        return;
+    }
+
+    const pad = { top: 20, right: 20, bottom: 40, left: 55 };
+    const cw = w - pad.left - pad.right;
+    const ch = h - pad.top - pad.bottom;
+
+    const Fval = F / 100;
+    const kMin = Fval * 0.3;
+    const kMax = Fval * 1.9;
+    const numPoints = 200;
+    const dK = (kMax - kMin) / numPoints;
+
+    // Compute density numerically from call prices: f(K) = d2C/dK2 * e^(rT)
+    // Using the Breeden-Litzenberger formula with SABR vols
+    // Approximate: density ~ (C(K+dK) - 2C(K) + C(K-dK)) / dK^2
+    function blackCall(Fv, K, vol, T) {
+        if (vol < 0.0001 || T < 0.001) return Math.max(Fv - K, 0);
+        const sqrtT = Math.sqrt(T);
+        const d1 = (Math.log(Fv / K) + 0.5 * vol * vol * T) / (vol * sqrtT);
+        const d2 = d1 - vol * sqrtT;
+        return Fv * normCDF(d1) - K * normCDF(d2);
+    }
+
+    function normCDF(x) {
+        const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741;
+        const a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
+        const sign = x < 0 ? -1 : 1;
+        x = Math.abs(x) / Math.SQRT2;
+        const t = 1.0 / (1.0 + p * x);
+        const y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+        return 0.5 * (1.0 + sign * y);
+    }
+
+    const densityPoints = [];
+    let maxDensity = 0;
+
+    for (let i = 1; i < numPoints - 1; i++) {
+        const K = kMin + dK * i;
+        const Km = K - dK;
+        const Kp = K + dK;
+
+        const volM = sabrImpliedVol(Fval, Km, T, alpha, beta, rho, nu);
+        const vol0 = sabrImpliedVol(Fval, K, T, alpha, beta, rho, nu);
+        const volP = sabrImpliedVol(Fval, Kp, T, alpha, beta, rho, nu);
+
+        const Cm = blackCall(Fval, Km, volM, T);
+        const C0 = blackCall(Fval, K, vol0, T);
+        const Cp = blackCall(Fval, Kp, volP, T);
+
+        const density = (Cm - 2 * C0 + Cp) / (dK * dK);
+        densityPoints.push({ K, density: Math.max(density, 0) });
+        if (density > maxDensity) maxDensity = density;
+    }
+
+    if (maxDensity < 1e-10) maxDensity = 1;
+
+    function xPos(K) { return pad.left + ((K - kMin) / (kMax - kMin)) * cw; }
+    function yPos(d) { return pad.top + (1 - d / (maxDensity * 1.15)) * ch; }
+
+    // Fill
+    ctx.beginPath();
+    ctx.moveTo(xPos(densityPoints[0].K), yPos(0));
+    for (const pt of densityPoints) {
+        ctx.lineTo(xPos(pt.K), yPos(pt.density));
+    }
+    ctx.lineTo(xPos(densityPoints[densityPoints.length - 1].K), yPos(0));
+    ctx.closePath();
+    const grad = ctx.createLinearGradient(0, pad.top, 0, pad.top + ch);
+    grad.addColorStop(0, 'rgba(188,140,255,0.2)');
+    grad.addColorStop(1, 'rgba(188,140,255,0.02)');
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Curve
+    ctx.beginPath();
+    for (let i = 0; i < densityPoints.length; i++) {
+        const px = xPos(densityPoints[i].K);
+        const py = yPos(densityPoints[i].density);
+        i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    }
+    ctx.strokeStyle = '#bc8cff';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    // Forward marker
+    ctx.beginPath();
+    ctx.setLineDash([4, 3]);
+    ctx.moveTo(xPos(Fval), pad.top);
+    ctx.lineTo(xPos(Fval), pad.top + ch);
+    ctx.strokeStyle = '#484f58';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.fillStyle = '#6e7681';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('F', xPos(Fval), pad.top - 5);
+
+    // Lognormal overlay for comparison
+    if (displayOpts.black) {
+        const atmVol = sabrImpliedVol(Fval, Fval, T, alpha, beta, rho, nu);
+        ctx.beginPath();
+        for (let i = 0; i < densityPoints.length; i++) {
+            const K = densityPoints[i].K;
+            if (K <= 0) continue;
+            const Cm = blackCall(Fval, K - dK, atmVol, T);
+            const C0 = blackCall(Fval, K, atmVol, T);
+            const Cp = blackCall(Fval, K + dK, atmVol, T);
+            const d = Math.max((Cm - 2 * C0 + Cp) / (dK * dK), 0);
+            const px = xPos(K);
+            const py = yPos(d);
+            i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+        }
+        ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([5, 4]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+    }
+
+    // Axes
+    ctx.fillStyle = '#6e7681';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'center';
+    for (let i = 0; i <= 6; i++) {
+        const K = kMin + (kMax - kMin) * i / 6;
+        ctx.fillText((K * 100).toFixed(1) + '%', xPos(K), h - pad.bottom + 18);
+    }
+
+    ctx.fillStyle = '#8b949e';
+    ctx.font = '12px sans-serif';
+    ctx.fillText('Strike', pad.left + cw / 2, h - 6);
+
+    ctx.save();
+    ctx.translate(14, pad.top + ch / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText('Probability Density', 0, 0);
+    ctx.restore();
+
+    // Legend
+    ctx.font = '10px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#bc8cff';
+    ctx.fillRect(pad.left + 5, pad.top + 5, 12, 3);
+    ctx.fillStyle = '#8b949e';
+    ctx.fillText('SABR density', pad.left + 22, pad.top + 10);
+
+    if (displayOpts.black) {
+        ctx.fillStyle = 'rgba(255,255,255,0.3)';
+        ctx.fillRect(pad.left + 5, pad.top + 22, 12, 3);
+        ctx.fillStyle = '#8b949e';
+        ctx.fillText('Lognormal (Black)', pad.left + 22, pad.top + 27);
+    }
+}
+
+// ── Draw Smile Decomposition ────────────────────────────────
+function drawDecomp(F, T, alpha, beta, rho, nu) {
+    const { ctx, w, h } = setupCanvas('decompChart');
+    ctx.clearRect(0, 0, w, h);
+
+    const pad = { top: 20, right: 20, bottom: 40, left: 55 };
+    const cw = w - pad.left - pad.right;
+    const ch = h - pad.top - pad.bottom;
+
+    const Fval = F / 100;
+    const kMin = Fval * 0.5;
+    const kMax = Fval * 1.6;
+    const numPoints = 200;
+
+    // Get ATM vol
+    const atmVol = sabrImpliedVol(Fval, Fval, T, alpha, beta, rho, nu) * 100;
+
+    // Compute contributions
+    // Base: just alpha effect (rho=0, nu=0.01)
+    // + Skew: add rho
+    // + Curvature: add nu
+    const baseVols = [];
+    const skewVols = [];
+    const fullVols = [];
+
+    let minV = Infinity, maxV = 0;
+
+    for (let i = 0; i <= numPoints; i++) {
+        const K = kMin + (kMax - kMin) * i / numPoints;
+
+        const base = sabrImpliedVol(Fval, K, T, alpha, beta, 0, 0.01) * 100;
+        const withSkew = sabrImpliedVol(Fval, K, T, alpha, beta, rho, 0.01) * 100;
+        const full = sabrImpliedVol(Fval, K, T, alpha, beta, rho, nu) * 100;
+
+        baseVols.push(base);
+        skewVols.push(withSkew);
+        fullVols.push(full);
+
+        const allVals = [base, withSkew, full];
+        for (const v of allVals) {
+            if (v < minV) minV = v;
+            if (v > maxV) maxV = v;
+        }
+    }
+
+    const vPad = (maxV - minV) * 0.15 + 0.5;
+    const yMin = Math.max(0, minV - vPad);
+    const yMax = maxV + vPad;
+
+    function xPos(i) { return pad.left + (i / numPoints) * cw; }
+    function yPos(v) { return pad.top + (1 - (v - yMin) / (yMax - yMin)) * ch; }
+
+    // Grid
+    ctx.strokeStyle = '#1b2028';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 5; i++) {
+        const y = pad.top + (i / 5) * ch;
+        ctx.beginPath();
+        ctx.moveTo(pad.left, y);
+        ctx.lineTo(w - pad.right, y);
+        ctx.stroke();
+    }
+
+    // Base (alpha + beta only)
+    ctx.beginPath();
+    for (let i = 0; i <= numPoints; i++) {
+        i === 0 ? ctx.moveTo(xPos(i), yPos(baseVols[i])) : ctx.lineTo(xPos(i), yPos(baseVols[i]));
+    }
+    ctx.strokeStyle = 'rgba(255,123,114,0.5)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([3, 3]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // With skew (+ rho)
+    ctx.beginPath();
+    for (let i = 0; i <= numPoints; i++) {
+        i === 0 ? ctx.moveTo(xPos(i), yPos(skewVols[i])) : ctx.lineTo(xPos(i), yPos(skewVols[i]));
+    }
+    ctx.strokeStyle = '#3fb950';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([5, 3]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Full SABR
+    ctx.beginPath();
+    for (let i = 0; i <= numPoints; i++) {
+        i === 0 ? ctx.moveTo(xPos(i), yPos(fullVols[i])) : ctx.lineTo(xPos(i), yPos(fullVols[i]));
+    }
+    ctx.strokeStyle = '#ff7b72';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    // Axes
+    ctx.fillStyle = '#6e7681';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'center';
+    for (let i = 0; i <= 6; i++) {
+        const K = kMin + (kMax - kMin) * i / 6;
+        ctx.fillText((K * 100).toFixed(1) + '%', pad.left + (i / 6) * cw, h - pad.bottom + 18);
+    }
+
+    ctx.textAlign = 'right';
+    for (let i = 0; i <= 5; i++) {
+        const v = yMin + (yMax - yMin) * i / 5;
+        ctx.fillText(v.toFixed(1) + '%', pad.left - 8, yPos(v) + 4);
+    }
+
+    ctx.fillStyle = '#8b949e';
+    ctx.font = '12px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Strike', pad.left + cw / 2, h - 6);
+
+    // Legend
+    ctx.font = '10px sans-serif';
+    ctx.textAlign = 'left';
+    const lx = pad.left + 8;
+    const ly = pad.top + 12;
+
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx + 14, ly);
+    ctx.strokeStyle = 'rgba(255,123,114,0.5)'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#8b949e';
+    ctx.fillText('\u03b1+\u03b2 only', lx + 18, ly + 4);
+
+    ctx.setLineDash([5, 3]);
+    ctx.beginPath(); ctx.moveTo(lx, ly + 16); ctx.lineTo(lx + 14, ly + 16);
+    ctx.strokeStyle = '#3fb950'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#8b949e';
+    ctx.fillText('+ \u03c1 skew', lx + 18, ly + 20);
+
+    ctx.beginPath(); ctx.moveTo(lx, ly + 32); ctx.lineTo(lx + 14, ly + 32);
+    ctx.strokeStyle = '#ff7b72'; ctx.lineWidth = 2.5; ctx.stroke();
+    ctx.fillStyle = '#8b949e';
+    ctx.fillText('Full SABR', lx + 18, ly + 36);
+}
+
+// ── Draw Vol Surface ────────────────────────────────────────
+function drawSurface(F, alpha, beta, rho, nu) {
+    const { ctx, w, h } = setupCanvas('surfaceChart');
+    ctx.clearRect(0, 0, w, h);
+
+    const pad = { top: 20, right: 35, bottom: 50, left: 60 };
+    const cw = w - pad.left - pad.right;
+    const ch = h - pad.top - pad.bottom;
+
+    const Fval = F / 100;
+    const kMin = Fval * 0.5;
+    const kMax = Fval * 1.6;
+    const tMin = 0.25;
+    const tMax = 15;
+
+    const kSteps = 60;
+    const tSteps = 40;
+
+    let minVol = Infinity, maxVol = 0;
+    const volGrid = [];
+
+    for (let j = 0; j < tSteps; j++) {
+        volGrid[j] = [];
+        const T = tMin + (tMax - tMin) * j / (tSteps - 1);
+        for (let i = 0; i < kSteps; i++) {
+            const K = kMin + (kMax - kMin) * i / (kSteps - 1);
+            const vol = sabrImpliedVol(Fval, K, T, alpha, beta, rho, nu) * 100;
+            volGrid[j][i] = vol;
+            if (vol < minVol) minVol = vol;
+            if (vol > maxVol) maxVol = vol;
+        }
+    }
+
+    const cellW = cw / kSteps;
+    const cellH = ch / tSteps;
+
+    for (let j = 0; j < tSteps; j++) {
+        for (let i = 0; i < kSteps; i++) {
+            const intensity = (volGrid[j][i] - minVol) / (maxVol - minVol + 0.001);
+            const r_ = Math.round(13 + intensity * (255 - 13));
+            const g_ = Math.round(17 + intensity * (123 - 17) * 0.7);
+            const b_ = Math.round(23 + intensity * (114 - 23) * 0.5);
+            ctx.fillStyle = `rgb(${r_},${g_},${b_})`;
+            ctx.fillRect(
+                pad.left + i * cellW,
+                pad.top + (tSteps - 1 - j) * cellH,
+                cellW + 0.5,
+                cellH + 0.5
+            );
+        }
+    }
+
+    // Contour lines
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+    ctx.lineWidth = 1;
+    const levels = 8;
+    for (let l = 1; l < levels; l++) {
+        const threshold = minVol + (maxVol - minVol) * l / levels;
+        for (let j = 0; j < tSteps; j++) {
+            ctx.beginPath();
+            let started = false;
+            for (let i = 1; i < kSteps; i++) {
+                if ((volGrid[j][i - 1] <= threshold && volGrid[j][i] >= threshold) ||
+                    (volGrid[j][i - 1] >= threshold && volGrid[j][i] <= threshold)) {
+                    const frac = (threshold - volGrid[j][i - 1]) / (volGrid[j][i] - volGrid[j][i - 1] + 1e-10);
+                    const px = pad.left + (i - 1 + frac) * cellW;
+                    const py = pad.top + (tSteps - 1 - j) * cellH + cellH / 2;
+                    if (!started) { ctx.moveTo(px, py); started = true; }
+                    else ctx.lineTo(px, py);
+                }
+            }
+            ctx.stroke();
+        }
+    }
+
+    // ATM line
+    const atmIdx = ((Fval - kMin) / (kMax - kMin)) * cw;
+    ctx.beginPath();
+    ctx.setLineDash([3, 3]);
+    ctx.moveTo(pad.left + atmIdx, pad.top);
+    ctx.lineTo(pad.left + atmIdx, pad.top + ch);
+    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Axes
+    ctx.fillStyle = '#6e7681';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'center';
+    for (let i = 0; i <= 6; i++) {
+        const K = kMin + (kMax - kMin) * i / 6;
+        const x = pad.left + (i / 6) * cw;
+        ctx.fillText((K * 100).toFixed(1) + '%', x, h - pad.bottom + 20);
+    }
+    ctx.textAlign = 'right';
+    for (let j = 0; j <= 4; j++) {
+        const T = tMin + (tMax - tMin) * j / 4;
+        const y = pad.top + (1 - j / 4) * ch;
+        ctx.fillText(T.toFixed(1) + 'y', pad.left - 8, y + 4);
+    }
+
+    ctx.fillStyle = '#8b949e';
+    ctx.font = '12px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Strike', pad.left + cw / 2, h - 8);
+
+    ctx.save();
+    ctx.translate(14, pad.top + ch / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText('Expiry', 0, 0);
+    ctx.restore();
+
+    // Color bar
+    const barW = 12, barH = ch;
+    const barX = w - 22;
+    for (let j = 0; j < barH; j++) {
+        const intensity = j / barH;
+        const r_ = Math.round(13 + intensity * (255 - 13));
+        const g_ = Math.round(17 + intensity * (123 - 17) * 0.7);
+        const b_ = Math.round(23 + intensity * (114 - 23) * 0.5);
+        ctx.fillStyle = `rgb(${r_},${g_},${b_})`;
+        ctx.fillRect(barX, pad.top + barH - j, barW, 1);
+    }
+    ctx.strokeStyle = '#30363d';
+    ctx.strokeRect(barX, pad.top, barW, barH);
+
+    ctx.fillStyle = '#6e7681';
+    ctx.font = '10px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(maxVol.toFixed(1) + '%', barX + barW + 3, pad.top + 10);
+    ctx.fillText(minVol.toFixed(1) + '%', barX + barW + 3, pad.top + barH);
+}
+
+// ── Master Update ───────────────────────────────────────────
+function update() {
+    const alpha = parseFloat(document.getElementById('sliderAlpha').value);
+    const beta  = parseFloat(document.getElementById('sliderBeta').value);
+    const rho   = parseFloat(document.getElementById('sliderRho').value);
+    const nu    = parseFloat(document.getElementById('sliderNu').value);
+    const F     = parseFloat(document.getElementById('sliderF').value);
+    const T     = parseFloat(document.getElementById('sliderT').value);
+
+    // Update labels
+    document.getElementById('valAlpha').textContent = alpha.toFixed(3);
+    document.getElementById('valBeta').textContent  = beta.toFixed(2);
+    document.getElementById('valRho').textContent   = rho.toFixed(2);
+    document.getElementById('valNu').textContent    = nu.toFixed(2);
+    document.getElementById('valF').textContent     = F.toFixed(2) + '%';
+    document.getElementById('valT').textContent     = T.toFixed(1) + ' yr';
+
+    // ATM metrics
+    const Fval = F / 100;
+    const atmVol = sabrImpliedVol(Fval, Fval, T, alpha, beta, rho, nu) * 100;
+
+    // 25-delta approximate strikes
+    const k25p = Fval * 0.85;
+    const k25c = Fval * 1.15;
+    const vol25p = sabrImpliedVol(Fval, k25p, T, alpha, beta, rho, nu) * 100;
+    const vol25c = sabrImpliedVol(Fval, k25c, T, alpha, beta, rho, nu) * 100;
+
+    document.getElementById('atmVol').textContent = atmVol.toFixed(2) + '%';
+    document.getElementById('skew25d').textContent = (vol25p - vol25c).toFixed(2) + '%';
+    document.getElementById('curvature').textContent = ((vol25p + vol25c - 2 * atmVol) / 2).toFixed(2) + '%';
+    document.getElementById('riskReversal').textContent = (vol25c - vol25p).toFixed(2) + '%';
+
+    // Draw all charts
+    drawSmile(F, T, alpha, beta, rho, nu);
+    drawDensity(F, T, alpha, beta, rho, nu);
+    drawDecomp(F, T, alpha, beta, rho, nu);
+    drawSurface(F, alpha, beta, rho, nu);
+}
+
+// ── Event Listeners ─────────────────────────────────────────
+const allSliders = document.querySelectorAll('input[type="range"]');
+allSliders.forEach(s => s.addEventListener('input', update));
+
+let resizeTimer;
+window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(update, 150);
+});
+
+// Initial render
+update();
+</script>
+</body>
+</html>

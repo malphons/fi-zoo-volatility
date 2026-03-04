@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Black-76 Model - Interactive Dashboard</title>
+<style>
+/* ── Reset & Base ───────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+    --bg:        #0d1117;
+    --surface:   #161b22;
+    --border:    #30363d;
+    --text:      #e6edf3;
+    --muted:     #8b949e;
+    --accent:    #f85149;
+    --accent2:   #ff7b72;
+    --green:     #3fb950;
+    --blue:      #58a6ff;
+    --purple:    #bc8cff;
+    --yellow:    #d29922;
+    --cyan:      #39d353;
+    --radius:    10px;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+    min-height: 100vh;
+}
+
+/* ── Header ─────────────────────────────────────────────────────── */
+.page-header {
+    background: linear-gradient(180deg, rgba(248,81,73,0.08) 0%, transparent 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 32px 24px;
+}
+.page-header .inner {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+.breadcrumb {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 12px;
+}
+.breadcrumb a { color: var(--accent); text-decoration: none; }
+.breadcrumb a:hover { text-decoration: underline; }
+
+.title-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+.title-badge {
+    background: rgba(248,81,73,0.15);
+    border: 1px solid rgba(248,81,73,0.3);
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+h1 {
+    font-size: 32px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #fff, #ccc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.subtitle {
+    font-size: 15px;
+    color: var(--muted);
+    margin-top: 6px;
+    max-width: 700px;
+}
+
+/* ── Formula Banner ──────────────────────────────────────────── */
+.formula-banner {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 28px;
+    margin-top: 20px;
+    display: inline-block;
+    font-family: 'Cambria Math', 'Latin Modern Math', Georgia, serif;
+    font-size: 22px;
+    letter-spacing: 0.5px;
+}
+.formula-banner .eq-label {
+    font-family: -apple-system, sans-serif;
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    display: block;
+    margin-bottom: 6px;
+}
+.formula-banner .hl { color: var(--accent); }
+.formula-banner .hl2 { color: var(--blue); }
+.formula-banner .hl3 { color: var(--green); }
+
+/* ── Layout ──────────────────────────────────────────────────── */
+.dashboard {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 24px;
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 24px;
+}
+
+@media (max-width: 900px) {
+    .dashboard { grid-template-columns: 1fr; }
+}
+
+/* ── Cards ───────────────────────────────────────────────────── */
+.card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    transition: border-color 0.2s;
+}
+.card:hover { border-color: #484f58; }
+.card h2 {
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--muted);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.card h2 .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    display: inline-block;
+}
+
+/* ── Inputs Panel ────────────────────────────────────────────── */
+.inputs-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.input-group { margin-bottom: 4px; }
+.input-group label {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 6px;
+}
+.input-group label .val {
+    font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    color: var(--text);
+    font-weight: 600;
+}
+.input-group input[type="range"] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--border);
+    outline: none;
+}
+.input-group input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    border: 2px solid var(--bg);
+    box-shadow: 0 0 8px rgba(248,81,73,0.4);
+    transition: transform 0.15s;
+}
+.input-group input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+}
+.input-group input[type="range"]::-moz-range-thumb {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    border: 2px solid var(--bg);
+}
+
+/* ── Results ─────────────────────────────────────────────────── */
+.results-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+.result-box {
+    background: rgba(248,81,73,0.06);
+    border: 1px solid rgba(248,81,73,0.15);
+    border-radius: 8px;
+    padding: 14px;
+    text-align: center;
+}
+.result-box.put {
+    background: rgba(88,166,255,0.06);
+    border-color: rgba(88,166,255,0.15);
+}
+.result-box .label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    margin-bottom: 4px;
+}
+.result-box .value {
+    font-size: 28px;
+    font-weight: 700;
+    font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+}
+.result-box .value.call-val { color: var(--accent2); }
+.result-box .value.put-val  { color: var(--blue); }
+
+/* ── Greeks ───────────────────────────────────────────────────── */
+.greeks-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+.greek-item {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+}
+.greek-item .greek-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 8px;
+}
+.greek-item .greek-name {
+    font-size: 13px;
+    font-weight: 600;
+}
+.greek-item .greek-val {
+    font-family: 'SF Mono', monospace;
+    font-size: 15px;
+    font-weight: 700;
+}
+.greek-item .gauge-track {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+}
+.greek-item .gauge-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+.delta-color  { color: var(--green); }
+.gamma-color  { color: var(--yellow); }
+.vega-color   { color: var(--purple); }
+.theta-color  { color: var(--cyan); }
+
+/* ── Main Area ───────────────────────────────────────────────── */
+.main-area {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+.chart-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+}
+@media (max-width: 1100px) {
+    .chart-row { grid-template-columns: 1fr; }
+}
+
+canvas {
+    width: 100%;
+    height: 300px;
+    display: block;
+}
+
+/* ── d1/d2 Visualization ────────────────────────────────────── */
+.d-values {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 12px;
+}
+.d-pill {
+    font-family: 'SF Mono', monospace;
+    font-size: 14px;
+    padding: 4px 12px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+}
+
+/* ── Implied Vol Section ─────────────────────────────────────── */
+.iv-section {
+    display: flex;
+    gap: 16px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+}
+.iv-input-group { flex: 1; min-width: 150px; }
+.iv-input-group label {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 4px;
+}
+.iv-input-group input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: 'SF Mono', monospace;
+    outline: none;
+}
+.iv-input-group input:focus { border-color: var(--accent); }
+.iv-btn {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 9px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s;
+}
+.iv-btn:hover { background: #e5443d; }
+.iv-result {
+    font-family: 'SF Mono', monospace;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--accent2);
+    min-width: 100px;
+    text-align: center;
+}
+
+/* ── Educational Section ─────────────────────────────────────── */
+.edu-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-top: 24px;
+}
+@media (max-width: 900px) { .edu-grid { grid-template-columns: 1fr; } }
+
+.edu-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+}
+.edu-card h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: var(--accent2);
+}
+.edu-card p, .edu-card li {
+    font-size: 14px;
+    color: #b1bac4;
+    line-height: 1.7;
+}
+.edu-card ul {
+    list-style: none;
+    padding: 0;
+}
+.edu-card ul li {
+    padding: 4px 0 4px 18px;
+    position: relative;
+}
+.edu-card ul li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 12px;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+}
+
+.comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin-top: 12px;
+}
+.comparison-table th {
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    color: var(--muted);
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.comparison-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid rgba(48,54,61,0.5);
+    color: #b1bac4;
+}
+.comparison-table tr:last-child td { border-bottom: none; }
+
+/* ── Footer ──────────────────────────────────────────────────── */
+.page-footer {
+    text-align: center;
+    padding: 32px 24px;
+    color: var(--muted);
+    font-size: 13px;
+    border-top: 1px solid var(--border);
+    margin-top: 40px;
+}
+.page-footer a { color: var(--accent); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ HEADER ═══════════════════════════════════ -->
+<header class="page-header">
+    <div class="inner">
+        <div class="breadcrumb">
+            <a href="../../">FI Model Zoo</a> &nbsp;/&nbsp; <a href="../../#volatility">Volatility</a> &nbsp;/&nbsp; Black-76
+        </div>
+        <div class="title-row">
+            <h1>Black Model (Black-76)</h1>
+            <span class="title-badge">Foundational</span>
+            <span class="title-badge" style="background:rgba(88,166,255,0.15);border-color:rgba(88,166,255,0.3);color:var(--blue);">1976</span>
+        </div>
+        <p class="subtitle">
+            Adapts Black-Scholes to price options on forwards and futures &mdash; the market standard for quoting interest rate option volatilities.
+        </p>
+        <div class="formula-banner">
+            <span class="eq-label">Black-76 Call Price</span>
+            <span class="hl">C</span> = e<sup>-rT</sup> [ <span class="hl2">F</span>&middot;N(<span class="hl3">d<sub>1</sub></span>) &minus; K&middot;N(<span class="hl3">d<sub>2</sub></span>) ]
+            &nbsp;&nbsp;&nbsp;
+            <span style="color:var(--muted);font-size:14px;font-family:sans-serif;">where</span>&nbsp;
+            <span class="hl3">d<sub>1,2</sub></span> = <sup>ln(F/K) &plusmn; &frac12;&sigma;&sup2;T</sup>&frasl;<sub>&sigma;&radic;T</sub>
+        </div>
+    </div>
+</header>
+
+<!-- ═══════════════ DASHBOARD ════════════════════════════════ -->
+<div class="dashboard">
+
+    <!-- ─── LEFT: INPUTS ────────────────────────────────────── -->
+    <div class="inputs-panel">
+
+        <!-- Parameters -->
+        <div class="card">
+            <h2><span class="dot"></span> Parameters</h2>
+
+            <div class="input-group">
+                <label>Forward Rate (F) <span class="val" id="valF">0.0500</span></label>
+                <input type="range" id="sliderF" min="0.01" max="0.15" step="0.001" value="0.05">
+            </div>
+            <div class="input-group">
+                <label>Strike (K) <span class="val" id="valK">0.0500</span></label>
+                <input type="range" id="sliderK" min="0.01" max="0.15" step="0.001" value="0.05">
+            </div>
+            <div class="input-group">
+                <label>Volatility (&sigma;) <span class="val" id="valSigma">20.0%</span></label>
+                <input type="range" id="sliderSigma" min="1" max="80" step="0.5" value="20">
+            </div>
+            <div class="input-group">
+                <label>Time to Expiry (T) <span class="val" id="valT">1.00 yr</span></label>
+                <input type="range" id="sliderT" min="0.1" max="10" step="0.1" value="1.0">
+            </div>
+            <div class="input-group">
+                <label>Discount Rate (r) <span class="val" id="valR">4.00%</span></label>
+                <input type="range" id="sliderR" min="0" max="10" step="0.25" value="4.0">
+            </div>
+        </div>
+
+        <!-- Prices -->
+        <div class="card">
+            <h2><span class="dot"></span> Option Prices</h2>
+            <div class="results-grid">
+                <div class="result-box">
+                    <div class="label">Call</div>
+                    <div class="value call-val" id="callPrice">--</div>
+                </div>
+                <div class="result-box put">
+                    <div class="label">Put</div>
+                    <div class="value put-val" id="putPrice">--</div>
+                </div>
+            </div>
+            <div style="margin-top:10px;font-size:12px;color:var(--muted);text-align:center;">
+                Prices in basis points (bps) of notional
+            </div>
+        </div>
+
+        <!-- Greeks -->
+        <div class="card">
+            <h2><span class="dot"></span> Greeks</h2>
+            <div class="greeks-grid">
+                <div class="greek-item">
+                    <div class="greek-header">
+                        <span class="greek-name delta-color">&Delta; Delta</span>
+                        <span class="greek-val delta-color" id="gDelta">--</span>
+                    </div>
+                    <div class="gauge-track"><div class="gauge-fill" id="gaugeDelta" style="width:50%;background:var(--green);"></div></div>
+                </div>
+                <div class="greek-item">
+                    <div class="greek-header">
+                        <span class="greek-name gamma-color">&Gamma; Gamma</span>
+                        <span class="greek-val gamma-color" id="gGamma">--</span>
+                    </div>
+                    <div class="gauge-track"><div class="gauge-fill" id="gaugeGamma" style="width:50%;background:var(--yellow);"></div></div>
+                </div>
+                <div class="greek-item">
+                    <div class="greek-header">
+                        <span class="greek-name vega-color">&nu; Vega</span>
+                        <span class="greek-val vega-color" id="gVega">--</span>
+                    </div>
+                    <div class="gauge-track"><div class="gauge-fill" id="gaugeVega" style="width:50%;background:var(--purple);"></div></div>
+                </div>
+                <div class="greek-item">
+                    <div class="greek-header">
+                        <span class="greek-name theta-color">&Theta; Theta</span>
+                        <span class="greek-val theta-color" id="gTheta">--</span>
+                    </div>
+                    <div class="gauge-track"><div class="gauge-fill" id="gaugeTheta" style="width:50%;background:var(--cyan);"></div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Implied Vol Solver -->
+        <div class="card">
+            <h2><span class="dot"></span> Implied Vol Solver</h2>
+            <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">
+                Given a market price, Newton-Raphson finds the volatility that matches.
+            </p>
+            <div class="iv-section">
+                <div class="iv-input-group">
+                    <label>Market Price (bps)</label>
+                    <input type="number" id="ivMarketPrice" placeholder="e.g. 40" step="0.1">
+                </div>
+                <div class="iv-input-group" style="flex:0;">
+                    <label>&nbsp;</label>
+                    <button class="iv-btn" onclick="solveImpliedVol()">Solve &sigma;</button>
+                </div>
+                <div class="iv-input-group" style="flex:0;">
+                    <label style="text-align:center;">Implied Vol</label>
+                    <div class="iv-result" id="ivResult">--</div>
+                </div>
+            </div>
+            <div id="ivIterations" style="font-size:11px;color:var(--muted);margin-top:8px;"></div>
+        </div>
+    </div>
+
+    <!-- ─── RIGHT: CHARTS ───────────────────────────────────── -->
+    <div class="main-area">
+
+        <div class="chart-row">
+            <!-- Payoff Diagram -->
+            <div class="card">
+                <h2><span class="dot"></span> Payoff / P&amp;L Diagram</h2>
+                <canvas id="payoffChart" height="300"></canvas>
+            </div>
+
+            <!-- d1 / d2 Normal Distribution -->
+            <div class="card">
+                <h2><span class="dot"></span> d<sub>1</sub> &amp; d<sub>2</sub> on Normal Curve</h2>
+                <div class="d-values">
+                    <div class="d-pill">d<sub>1</sub> = <span id="d1Val" style="color:var(--green);">--</span></div>
+                    <div class="d-pill">d<sub>2</sub> = <span id="d2Val" style="color:var(--blue);">--</span></div>
+                </div>
+                <canvas id="normalChart" height="270"></canvas>
+            </div>
+        </div>
+
+        <!-- P&L Surface -->
+        <div class="card">
+            <h2><span class="dot"></span> Price Surface: Forward &times; Volatility</h2>
+            <canvas id="surfaceChart" height="340"></canvas>
+            <div style="display:flex;justify-content:center;gap:24px;margin-top:10px;font-size:12px;color:var(--muted);">
+                <span>X: Forward Rate &rarr;</span>
+                <span>Y: Volatility &rarr;</span>
+                <span style="color:var(--accent);">Color: Call Price</span>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ═══════════════ EDUCATIONAL ══════════════════════════════ -->
+<div style="max-width:1400px;margin:0 auto;padding:0 24px;">
+    <div class="edu-grid">
+        <div class="edu-card">
+            <h3>Why Black-76 for Fixed Income?</h3>
+            <p style="margin-bottom:12px;">
+                Unlike equity options where you own a stock, interest rate options are written on <strong style="color:var(--text);">forward rates</strong>.
+                There is no "spot price" to discount &mdash; the underlying is already a forward contract that requires no upfront investment.
+            </p>
+            <ul>
+                <li>No cost-of-carry or dividend adjustments needed</li>
+                <li>The forward rate <em>is</em> the martingale under the T-forward measure</li>
+                <li>Discounting happens once, at the risk-free rate, outside the expectation</li>
+                <li>The entire market quotes caps/floors and swaptions in "Black vol"</li>
+                <li>Central to ISDA standard definitions and broker quotes</li>
+            </ul>
+        </div>
+        <div class="edu-card">
+            <h3>Black-76 vs. Black-Scholes</h3>
+            <table class="comparison-table">
+                <thead>
+                    <tr><th>Feature</th><th>Black-Scholes</th><th>Black-76</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Underlying</td><td>Spot price S</td><td>Forward price F</td></tr>
+                    <tr><td>Drift</td><td>Risk-free rate r</td><td>None (forward is martingale)</td></tr>
+                    <tr><td>Discounting</td><td>Built into formula</td><td>Separate e<sup>-rT</sup> factor</td></tr>
+                    <tr><td>Dividends</td><td>Must be modeled</td><td>Not applicable</td></tr>
+                    <tr><td>Primary use</td><td>Equity options</td><td>IR caps, floors, swaptions</td></tr>
+                    <tr><td>Vol quote</td><td>"BS vol"</td><td>"Black vol" (market standard)</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="edu-card">
+            <h3>Key Insight</h3>
+            <p>
+                The Black-76 model provides a <strong style="color:var(--text);">common volatility language</strong> for the entire fixed income derivatives market.
+                When a broker quotes "20% vol on a 5y10y swaption," everyone knows exactly how to convert that to a price.
+                The model itself may be "wrong" &mdash; real volatility is not constant and lognormal &mdash; but it serves as the
+                <strong style="color:var(--accent);">universal translation layer</strong> between price and implied volatility.
+            </p>
+            <p style="margin-top:12px;">
+                This is precisely why more sophisticated models like SABR are calibrated to reproduce Black implied volatilities,
+                not prices directly. Black-76 is the Rosetta Stone of fixed income options.
+            </p>
+        </div>
+        <div class="edu-card">
+            <h3>Products Priced with Black-76</h3>
+            <ul>
+                <li><strong style="color:var(--text);">Caps &amp; Floors</strong> &mdash; portfolios of caplets/floorlets on SOFR or EURIBOR forward rates</li>
+                <li><strong style="color:var(--text);">Swaptions</strong> &mdash; options to enter into interest rate swaps at a fixed strike</li>
+                <li><strong style="color:var(--text);">Bond Options</strong> &mdash; options on government bond futures (Treasury, Bund, Gilt)</li>
+                <li><strong style="color:var(--text);">Spread Options</strong> &mdash; options on the spread between two rates</li>
+                <li><strong style="color:var(--text);">Digital/Binary</strong> &mdash; pay fixed amount if rate exceeds strike at expiry</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<footer class="page-footer">
+    <a href="../../">Fixed Income Model Zoo</a> &nbsp;&middot;&nbsp; Volatility &nbsp;&middot;&nbsp; Black-76
+</footer>
+
+<!-- ═══════════════ JAVASCRIPT ═══════════════════════════════ -->
+<script>
+// ── Standard Normal CDF & PDF ───────────────────────────────
+function normPDF(x) {
+    return Math.exp(-0.5 * x * x) / Math.sqrt(2 * Math.PI);
+}
+
+function normCDF(x) {
+    // Abramowitz & Stegun approximation
+    const a1 =  0.254829592, a2 = -0.284496736, a3 = 1.421413741;
+    const a4 = -1.453152027, a5 = 1.061405429, p  = 0.3275911;
+    const sign = x < 0 ? -1 : 1;
+    x = Math.abs(x) / Math.SQRT2;
+    const t = 1.0 / (1.0 + p * x);
+    const y = 1.0 - (((((a5*t + a4)*t) + a3)*t + a2)*t + a1)*t * Math.exp(-x*x);
+    return 0.5 * (1.0 + sign * y);
+}
+
+// ── Black-76 Pricing ────────────────────────────────────────
+function black76(F, K, sigma, T, r) {
+    const sqrtT = Math.sqrt(T);
+    const sigSqrtT = sigma * sqrtT;
+
+    if (sigSqrtT < 1e-12) {
+        const df = Math.exp(-r * T);
+        return {
+            call: df * Math.max(F - K, 0),
+            put:  df * Math.max(K - F, 0),
+            d1: F > K ? Infinity : (F < K ? -Infinity : 0),
+            d2: F > K ? Infinity : (F < K ? -Infinity : 0),
+            delta_c: F > K ? Math.exp(-r*T) : 0,
+            gamma: 0, vega: 0, theta_c: 0
+        };
+    }
+
+    const d1 = (Math.log(F / K) + 0.5 * sigma * sigma * T) / sigSqrtT;
+    const d2 = d1 - sigSqrtT;
+    const df = Math.exp(-r * T);
+    const Nd1 = normCDF(d1);
+    const Nd2 = normCDF(d2);
+    const nd1 = normPDF(d1);
+
+    const call = df * (F * Nd1 - K * Nd2);
+    const put  = df * (K * normCDF(-d2) - F * normCDF(-d1));
+
+    // Greeks
+    const delta_c = df * Nd1;
+    const gamma   = df * nd1 / (F * sigSqrtT);
+    const vega    = df * F * nd1 * sqrtT;
+    const theta_c = -df * F * nd1 * sigma / (2 * sqrtT) + r * call;
+
+    return { call, put, d1, d2, delta_c, gamma, vega, theta_c };
+}
+
+// ── DOM References ──────────────────────────────────────────
+const sliders = {
+    F: document.getElementById('sliderF'),
+    K: document.getElementById('sliderK'),
+    sigma: document.getElementById('sliderSigma'),
+    T: document.getElementById('sliderT'),
+    r: document.getElementById('sliderR')
+};
+
+const vals = {
+    F: document.getElementById('valF'),
+    K: document.getElementById('valK'),
+    sigma: document.getElementById('valSigma'),
+    T: document.getElementById('valT'),
+    r: document.getElementById('valR')
+};
+
+// ── Canvas Contexts ─────────────────────────────────────────
+function setupCanvas(id) {
+    const c = document.getElementById(id);
+    const rect = c.parentElement.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    const w = c.offsetWidth;
+    const h = parseInt(c.getAttribute('height'));
+    c.width  = w * dpr;
+    c.height = h * dpr;
+    c.style.width  = w + 'px';
+    c.style.height = h + 'px';
+    const ctx = c.getContext('2d');
+    ctx.scale(dpr, dpr);
+    return { ctx, w, h };
+}
+
+// ── Payoff Chart ────────────────────────────────────────────
+function drawPayoff(F, K, sigma, T, r) {
+    const { ctx, w, h } = setupCanvas('payoffChart');
+    ctx.clearRect(0, 0, w, h);
+
+    const res = black76(F, K, sigma, T, r);
+    const premium = res.call;
+
+    // Range
+    const lo = K * 0.6;
+    const hi = K * 1.5;
+    const pad = { top: 20, right: 20, bottom: 40, left: 55 };
+    const cw = w - pad.left - pad.right;
+    const ch = h - pad.top - pad.bottom;
+
+    // Find price range for y-axis
+    let minY = -premium * 1.5;
+    let maxY = (hi - K) * 1.5;
+    if (maxY - minY < 0.001) { minY = -0.001; maxY = 0.001; }
+
+    function xPos(fwd) { return pad.left + ((fwd - lo) / (hi - lo)) * cw; }
+    function yPos(val) { return pad.top + (1 - (val - minY) / (maxY - minY)) * ch; }
+
+    // Grid
+    ctx.strokeStyle = '#21262d';
+    ctx.lineWidth = 1;
+    // Zero line
+    const zeroY = yPos(0);
+    ctx.beginPath();
+    ctx.moveTo(pad.left, zeroY);
+    ctx.lineTo(w - pad.right, zeroY);
+    ctx.strokeStyle = '#30363d';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Strike line
+    const strikeX = xPos(K);
+    ctx.beginPath();
+    ctx.setLineDash([4,4]);
+    ctx.moveTo(strikeX, pad.top);
+    ctx.lineTo(strikeX, h - pad.bottom);
+    ctx.strokeStyle = '#484f58';
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Labels
+    ctx.fillStyle = '#6e7681';
+    ctx.font = '11px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('K=' + (K*100).toFixed(1)+'%', strikeX, h - pad.bottom + 16);
+    ctx.fillText('Forward Rate', w/2, h - 8);
+
+    // Y-axis labels
+    ctx.textAlign = 'right';
+    for (let i = 0; i <= 4; i++) {
+        const v = minY + (maxY - minY) * i / 4;
+        const y = yPos(v);
+        ctx.fillStyle = '#484f58';
+        ctx.fillText((v * 10000).toFixed(0) + ' bps', pad.left - 8, y + 4);
+        ctx.beginPath();
+        ctx.moveTo(pad.left, y);
+        ctx.lineTo(w - pad.right, y);
+        ctx.strokeStyle = '#1b2028';
+        ctx.stroke();
+    }
+
+    // Intrinsic payoff (hockey stick)
+    ctx.beginPath();
+    const steps = 200;
+    for (let i = 0; i <= steps; i++) {
+        const fwd = lo + (hi - lo) * i / steps;
+        const payoff = Math.max(fwd - K, 0);
+        const px = xPos(fwd);
+        const py = yPos(payoff);
+        i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    }
+    ctx.strokeStyle = 'rgba(248,81,73,0.3)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // P&L curve (payoff - premium)
+    ctx.beginPath();
+    for (let i = 0; i <= steps; i++) {
+        const fwd = lo + (hi - lo) * i / steps;
+        const pnl = Math.max(fwd - K, 0) - premium;
+        const px = xPos(fwd);
+        const py = yPos(pnl);
+        i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    }
+    ctx.strokeStyle = '#f85149';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    // Fill profit area
+    ctx.beginPath();
+    const breakeven = K + premium;
+    if (breakeven < hi) {
+        ctx.moveTo(xPos(breakeven), yPos(0));
+        for (let fwd = breakeven; fwd <= hi; fwd += (hi-lo)/200) {
+            ctx.lineTo(xPos(fwd), yPos(Math.max(fwd-K,0) - premium));
+        }
+        ctx.lineTo(xPos(hi), yPos(0));
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(63,185,80,0.1)';
+        ctx.fill();
+    }
+
+    // Fill loss area
+    ctx.beginPath();
+    ctx.moveTo(xPos(lo), yPos(-premium));
+    ctx.lineTo(xPos(Math.min(breakeven, hi)), yPos(-premium));
+    if (breakeven < hi) {
+        ctx.lineTo(xPos(breakeven), yPos(0));
+    }
+    ctx.lineTo(xPos(lo), yPos(0));
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(248,81,73,0.08)';
+    ctx.fill();
+
+    // Current forward marker
+    const cfx = xPos(F);
+    const cfPnl = Math.max(F - K, 0) - premium;
+    const cfy = yPos(cfPnl);
+    ctx.beginPath();
+    ctx.arc(cfx, cfy, 5, 0, Math.PI*2);
+    ctx.fillStyle = '#ff7b72';
+    ctx.fill();
+    ctx.strokeStyle = '#0d1117';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Put P&L (dashed)
+    ctx.beginPath();
+    for (let i = 0; i <= steps; i++) {
+        const fwd = lo + (hi - lo) * i / steps;
+        const pnl = Math.max(K - fwd, 0) - res.put;
+        const px = xPos(fwd);
+        const py = yPos(pnl);
+        i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    }
+    ctx.strokeStyle = '#58a6ff';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([5,4]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Legend
+    ctx.fillStyle = '#f85149';
+    ctx.fillRect(w - 120, pad.top + 5, 12, 3);
+    ctx.fillStyle = '#8b949e';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('Call P&L', w - 104, pad.top + 10);
+
+    ctx.fillStyle = '#58a6ff';
+    ctx.fillRect(w - 120, pad.top + 22, 12, 3);
+    ctx.fillStyle = '#8b949e';
+    ctx.fillText('Put P&L', w - 104, pad.top + 27);
+}
+
+// ── Normal Distribution with d1, d2 ────────────────────────
+function drawNormal(d1, d2) {
+    const { ctx, w, h } = setupCanvas('normalChart');
+    ctx.clearRect(0, 0, w, h);
+
+    const pad = { top: 10, right: 20, bottom: 30, left: 20 };
+    const cw = w - pad.left - pad.right;
+    const ch = h - pad.top - pad.bottom;
+
+    const xRange = [-4, 4];
+    const yMax = 0.45;
+
+    function xPos(v) { return pad.left + ((v - xRange[0]) / (xRange[1] - xRange[0])) * cw; }
+    function yPos(v) { return pad.top + (1 - v / yMax) * ch; }
+
+    // Fill under curve
+    ctx.beginPath();
+    ctx.moveTo(xPos(-4), yPos(0));
+    for (let x = -4; x <= 4; x += 0.02) {
+        ctx.lineTo(xPos(x), yPos(normPDF(x)));
+    }
+    ctx.lineTo(xPos(4), yPos(0));
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(255,255,255,0.03)';
+    ctx.fill();
+
+    // Shade area left of d2 (N(d2) = exercise probability)
+    if (isFinite(d2)) {
+        ctx.beginPath();
+        ctx.moveTo(xPos(-4), yPos(0));
+        const clampD2 = Math.max(-4, Math.min(4, d2));
+        for (let x = -4; x <= clampD2; x += 0.02) {
+            ctx.lineTo(xPos(x), yPos(normPDF(x)));
+        }
+        ctx.lineTo(xPos(clampD2), yPos(0));
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(88,166,255,0.12)';
+        ctx.fill();
+    }
+
+    // Shade between d2 and d1
+    if (isFinite(d1) && isFinite(d2) && d1 > d2) {
+        ctx.beginPath();
+        const cd2 = Math.max(-4, Math.min(4, d2));
+        const cd1 = Math.max(-4, Math.min(4, d1));
+        ctx.moveTo(xPos(cd2), yPos(0));
+        for (let x = cd2; x <= cd1; x += 0.02) {
+            ctx.lineTo(xPos(x), yPos(normPDF(x)));
+        }
+        ctx.lineTo(xPos(cd1), yPos(0));
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(63,185,80,0.1)';
+        ctx.fill();
+    }
+
+    // Draw curve
+    ctx.beginPath();
+    for (let x = -4; x <= 4; x += 0.02) {
+        const px = xPos(x);
+        const py = yPos(normPDF(x));
+        x === -4 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    }
+    ctx.strokeStyle = '#484f58';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Axis
+    ctx.beginPath();
+    ctx.moveTo(pad.left, yPos(0));
+    ctx.lineTo(w - pad.right, yPos(0));
+    ctx.strokeStyle = '#30363d';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // d1 marker
+    if (isFinite(d1)) {
+        const cd1 = Math.max(-4, Math.min(4, d1));
+        ctx.beginPath();
+        ctx.setLineDash([3,3]);
+        ctx.moveTo(xPos(cd1), yPos(0));
+        ctx.lineTo(xPos(cd1), yPos(normPDF(cd1)));
+        ctx.strokeStyle = '#3fb950';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.fillStyle = '#3fb950';
+        ctx.font = 'bold 12px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('d\u2081', xPos(cd1), yPos(normPDF(cd1)) - 8);
+    }
+
+    // d2 marker
+    if (isFinite(d2)) {
+        const cd2 = Math.max(-4, Math.min(4, d2));
+        ctx.beginPath();
+        ctx.setLineDash([3,3]);
+        ctx.moveTo(xPos(cd2), yPos(0));
+        ctx.lineTo(xPos(cd2), yPos(normPDF(cd2)));
+        ctx.strokeStyle = '#58a6ff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.fillStyle = '#58a6ff';
+        ctx.font = 'bold 12px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('d\u2082', xPos(cd2), yPos(normPDF(cd2)) - 8);
+    }
+
+    // Labels
+    ctx.fillStyle = '#6e7681';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'center';
+    for (let x = -3; x <= 3; x++) {
+        ctx.fillText(x.toString(), xPos(x), yPos(0) + 16);
+    }
+
+    // Legend
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#58a6ff';
+    ctx.fillText('N(d\u2082) = exercise prob.', pad.left + 5, pad.top + 15);
+    ctx.fillStyle = '#3fb950';
+    ctx.fillText('N(d\u2081) = delta factor', pad.left + 5, pad.top + 30);
+}
+
+// ── Surface Chart (Forward x Vol -> Call Price) ─────────────
+function drawSurface(F, K, T, r) {
+    const { ctx, w, h } = setupCanvas('surfaceChart');
+    ctx.clearRect(0, 0, w, h);
+
+    const pad = { top: 20, right: 30, bottom: 50, left: 60 };
+    const cw = w - pad.left - pad.right;
+    const ch = h - pad.top - pad.bottom;
+
+    const fwdSteps = 60;
+    const volSteps = 40;
+    const fwdMin = K * 0.5, fwdMax = K * 1.6;
+    const volMin = 0.05, volMax = 0.60;
+
+    // Calculate all prices for color mapping
+    let maxPrice = 0;
+    const prices = [];
+    for (let j = 0; j < volSteps; j++) {
+        prices[j] = [];
+        const vol = volMin + (volMax - volMin) * j / (volSteps - 1);
+        for (let i = 0; i < fwdSteps; i++) {
+            const fwd = fwdMin + (fwdMax - fwdMin) * i / (fwdSteps - 1);
+            const p = black76(fwd, K, vol, T, r).call;
+            prices[j][i] = p;
+            if (p > maxPrice) maxPrice = p;
+        }
+    }
+
+    // Draw heatmap cells
+    const cellW = cw / fwdSteps;
+    const cellH = ch / volSteps;
+
+    for (let j = 0; j < volSteps; j++) {
+        for (let i = 0; i < fwdSteps; i++) {
+            const intensity = maxPrice > 0 ? prices[j][i] / maxPrice : 0;
+            const r_ = Math.round(13 + intensity * (248 - 13));
+            const g_ = Math.round(17 + intensity * (81 - 17) * 0.6);
+            const b_ = Math.round(23 + intensity * (73 - 23) * 0.5);
+            ctx.fillStyle = `rgb(${r_},${g_},${b_})`;
+            ctx.fillRect(
+                pad.left + i * cellW,
+                pad.top + (volSteps - 1 - j) * cellH,
+                cellW + 0.5,
+                cellH + 0.5
+            );
+        }
+    }
+
+    // Contour lines
+    const contourLevels = [0.1, 0.25, 0.4, 0.55, 0.7, 0.85];
+    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+    ctx.lineWidth = 1;
+    for (const level of contourLevels) {
+        const threshold = level * maxPrice;
+        ctx.beginPath();
+        let started = false;
+        for (let i = 0; i < fwdSteps; i++) {
+            // Find vol where price crosses threshold
+            for (let j = 1; j < volSteps; j++) {
+                if ((prices[j-1][i] <= threshold && prices[j][i] >= threshold) ||
+                    (prices[j-1][i] >= threshold && prices[j][i] <= threshold)) {
+                    const frac = (threshold - prices[j-1][i]) / (prices[j][i] - prices[j-1][i]);
+                    const volIdx = (j - 1 + frac);
+                    const px = pad.left + i * cellW + cellW/2;
+                    const py = pad.top + (volSteps - 1 - volIdx) * cellH;
+                    if (!started) { ctx.moveTo(px, py); started = true; }
+                    else ctx.lineTo(px, py);
+                }
+            }
+        }
+        ctx.stroke();
+    }
+
+    // Current position marker
+    if (F >= fwdMin && F <= fwdMax) {
+        const sigma = parseFloat(sliders.sigma.value) / 100;
+        if (sigma >= volMin && sigma <= volMax) {
+            const mx = pad.left + ((F - fwdMin) / (fwdMax - fwdMin)) * cw;
+            const my = pad.top + (1 - (sigma - volMin) / (volMax - volMin)) * ch;
+            ctx.beginPath();
+            ctx.arc(mx, my, 6, 0, Math.PI * 2);
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(mx, my, 3, 0, Math.PI * 2);
+            ctx.fillStyle = '#fff';
+            ctx.fill();
+
+            // Crosshairs
+            ctx.setLineDash([2,3]);
+            ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(mx, pad.top);
+            ctx.lineTo(mx, pad.top + ch);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(pad.left, my);
+            ctx.lineTo(pad.left + cw, my);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+    }
+
+    // Axes labels
+    ctx.fillStyle = '#6e7681';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'center';
+    for (let i = 0; i <= 5; i++) {
+        const fwd = fwdMin + (fwdMax - fwdMin) * i / 5;
+        const x = pad.left + (i / 5) * cw;
+        ctx.fillText((fwd * 100).toFixed(1) + '%', x, h - pad.bottom + 20);
+
+        // Tick
+        ctx.beginPath();
+        ctx.moveTo(x, pad.top + ch);
+        ctx.lineTo(x, pad.top + ch + 4);
+        ctx.strokeStyle = '#484f58';
+        ctx.stroke();
+    }
+
+    ctx.textAlign = 'right';
+    for (let j = 0; j <= 4; j++) {
+        const vol = volMin + (volMax - volMin) * j / 4;
+        const y = pad.top + (1 - j / 4) * ch;
+        ctx.fillText((vol * 100).toFixed(0) + '%', pad.left - 8, y + 4);
+    }
+
+    // Axis titles
+    ctx.fillStyle = '#8b949e';
+    ctx.font = '12px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Forward Rate', pad.left + cw/2, h - 8);
+
+    ctx.save();
+    ctx.translate(14, pad.top + ch/2);
+    ctx.rotate(-Math.PI/2);
+    ctx.fillText('Volatility', 0, 0);
+    ctx.restore();
+
+    // Color bar
+    const barW = 12, barH = ch;
+    const barX = w - 18;
+    for (let j = 0; j < barH; j++) {
+        const intensity = j / barH;
+        const r_ = Math.round(13 + intensity * (248 - 13));
+        const g_ = Math.round(17 + intensity * (81 - 17) * 0.6);
+        const b_ = Math.round(23 + intensity * (73 - 23) * 0.5);
+        ctx.fillStyle = `rgb(${r_},${g_},${b_})`;
+        ctx.fillRect(barX, pad.top + barH - j, barW, 1);
+    }
+    ctx.strokeStyle = '#30363d';
+    ctx.strokeRect(barX, pad.top, barW, barH);
+}
+
+// ── Implied Vol Solver (Newton-Raphson) ─────────────────────
+function solveImpliedVol() {
+    const F = parseFloat(sliders.F.value);
+    const K = parseFloat(sliders.K.value);
+    const T = parseFloat(sliders.T.value);
+    const r = parseFloat(sliders.r.value) / 100;
+    const marketBps = parseFloat(document.getElementById('ivMarketPrice').value);
+
+    if (isNaN(marketBps) || marketBps <= 0) {
+        document.getElementById('ivResult').textContent = 'Enter price';
+        document.getElementById('ivIterations').textContent = '';
+        return;
+    }
+
+    const target = marketBps / 10000; // Convert bps to decimal
+    let sigma = 0.20; // Initial guess
+    const maxIter = 100;
+    const tol = 1e-10;
+    let log = '';
+
+    for (let i = 0; i < maxIter; i++) {
+        const res = black76(F, K, sigma, T, r);
+        const diff = res.call - target;
+
+        if (Math.abs(diff) < tol) {
+            log = `Converged in ${i + 1} iterations`;
+            break;
+        }
+
+        // Vega = dC/dsigma
+        const vega = res.vega;
+        if (Math.abs(vega) < 1e-15) {
+            log = 'Vega too small, cannot converge';
+            sigma = NaN;
+            break;
+        }
+
+        sigma = sigma - diff / vega;
+        if (sigma <= 0) sigma = 0.001;
+        if (sigma > 5) sigma = 5;
+
+        if (i === maxIter - 1) {
+            log = 'Max iterations reached';
+        }
+    }
+
+    if (isNaN(sigma)) {
+        document.getElementById('ivResult').textContent = 'N/A';
+    } else {
+        document.getElementById('ivResult').textContent = (sigma * 100).toFixed(2) + '%';
+    }
+    document.getElementById('ivIterations').textContent = log;
+}
+
+// ── Master Update ───────────────────────────────────────────
+function update() {
+    const F     = parseFloat(sliders.F.value);
+    const K     = parseFloat(sliders.K.value);
+    const sigma = parseFloat(sliders.sigma.value) / 100;
+    const T     = parseFloat(sliders.T.value);
+    const r     = parseFloat(sliders.r.value) / 100;
+
+    // Update labels
+    vals.F.textContent     = F.toFixed(4);
+    vals.K.textContent     = K.toFixed(4);
+    vals.sigma.textContent = parseFloat(sliders.sigma.value).toFixed(1) + '%';
+    vals.T.textContent     = T.toFixed(2) + ' yr';
+    vals.r.textContent     = parseFloat(sliders.r.value).toFixed(2) + '%';
+
+    // Calculate
+    const res = black76(F, K, sigma, T, r);
+
+    // Display prices in bps
+    document.getElementById('callPrice').textContent = (res.call * 10000).toFixed(2);
+    document.getElementById('putPrice').textContent  = (res.put * 10000).toFixed(2);
+
+    // d1, d2
+    document.getElementById('d1Val').textContent = isFinite(res.d1) ? res.d1.toFixed(4) : (res.d1 > 0 ? '+Inf' : '-Inf');
+    document.getElementById('d2Val').textContent = isFinite(res.d2) ? res.d2.toFixed(4) : (res.d2 > 0 ? '+Inf' : '-Inf');
+
+    // Greeks
+    document.getElementById('gDelta').textContent = res.delta_c.toFixed(4);
+    document.getElementById('gGamma').textContent = res.gamma.toFixed(2);
+    document.getElementById('gVega').textContent  = (res.vega * 10000).toFixed(2);
+    document.getElementById('gTheta').textContent = (res.theta_c * 10000).toFixed(2);
+
+    // Gauges (normalized)
+    document.getElementById('gaugeDelta').style.width = (res.delta_c * 100) + '%';
+
+    const maxGamma = black76(F, F, sigma, T, r).gamma;
+    document.getElementById('gaugeGamma').style.width = (maxGamma > 0 ? Math.min(res.gamma / maxGamma * 100, 100) : 0) + '%';
+
+    const maxVega = black76(F, F, sigma, T, r).vega * 10000;
+    const curVega = res.vega * 10000;
+    document.getElementById('gaugeVega').style.width = (maxVega > 0 ? Math.min(curVega / maxVega * 100, 100) : 0) + '%';
+
+    const maxTheta = Math.abs(black76(F, F, sigma, T, r).theta_c * 10000);
+    const curTheta = Math.abs(res.theta_c * 10000);
+    document.getElementById('gaugeTheta').style.width = (maxTheta > 0 ? Math.min(curTheta / maxTheta * 100, 100) : 0) + '%';
+
+    // Charts
+    drawPayoff(F, K, sigma, T, r);
+    drawNormal(res.d1, res.d2);
+    drawSurface(F, K, T, r);
+}
+
+// ── Event Listeners ─────────────────────────────────────────
+Object.values(sliders).forEach(s => s.addEventListener('input', update));
+
+// Debounced resize
+let resizeTimer;
+window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(update, 150);
+});
+
+// Initial render
+update();
+</script>
+</body>
+</html>

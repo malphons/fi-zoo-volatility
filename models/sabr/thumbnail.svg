@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" width="320" height="200">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#161b22"/>
+      <stop offset="100%" stop-color="#0d1117"/>
+    </linearGradient>
+    <linearGradient id="smileGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ff7b72" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#ff7b72" stop-opacity="0.01"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="320" height="200" rx="12" fill="url(#bg)"/>
+  <rect width="320" height="200" rx="12" fill="none" stroke="#30363d" stroke-width="1"/>
+
+  <!-- Grid lines -->
+  <line x1="40" y1="40" x2="40" y2="170" stroke="#21262d" stroke-width="0.5"/>
+  <line x1="90" y1="40" x2="90" y2="170" stroke="#21262d" stroke-width="0.5"/>
+  <line x1="140" y1="40" x2="140" y2="170" stroke="#21262d" stroke-width="0.5"/>
+  <line x1="190" y1="40" x2="190" y2="170" stroke="#21262d" stroke-width="0.5"/>
+  <line x1="240" y1="40" x2="240" y2="170" stroke="#21262d" stroke-width="0.5"/>
+  <line x1="290" y1="40" x2="290" y2="170" stroke="#21262d" stroke-width="0.5"/>
+  <line x1="40" y1="60" x2="290" y2="60" stroke="#21262d" stroke-width="0.5"/>
+  <line x1="40" y1="90" x2="290" y2="90" stroke="#21262d" stroke-width="0.5"/>
+  <line x1="40" y1="120" x2="290" y2="120" stroke="#21262d" stroke-width="0.5"/>
+  <line x1="40" y1="150" x2="290" y2="150" stroke="#21262d" stroke-width="0.5"/>
+
+  <!-- ATM vertical line -->
+  <line x1="165" y1="40" x2="165" y2="170" stroke="#484f58" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="165" y="185" fill="#6e7681" font-family="sans-serif" font-size="9" text-anchor="middle">ATM</text>
+
+  <!-- Black flat vol (horizontal dashed line) -->
+  <line x1="40" y1="108" x2="290" y2="108" stroke="#ffffff" stroke-width="1" stroke-opacity="0.15" stroke-dasharray="6,4"/>
+  <text x="48" y="104" fill="#ffffff" fill-opacity="0.25" font-family="sans-serif" font-size="7">Black flat vol</text>
+
+  <!-- Fill under smile curve -->
+  <path d="M40,75 Q75,88 100,96 Q125,102 140,106 Q155,108 165,108 Q175,107 190,104 Q215,98 240,90 Q265,82 290,72 L290,170 L40,170 Z"
+        fill="url(#smileGrad)"/>
+
+  <!-- Volatility smile curve with skew -->
+  <path d="M40,75 Q75,88 100,96 Q125,102 140,106 Q155,108 165,108 Q175,107 190,104 Q215,98 240,90 Q265,82 290,72"
+        fill="none" stroke="#ff7b72" stroke-width="3" stroke-linecap="round" filter="url(#glow)"/>
+
+  <!-- Glow layer -->
+  <path d="M40,75 Q75,88 100,96 Q125,102 140,106 Q155,108 165,108 Q175,107 190,104 Q215,98 240,90 Q265,82 290,72"
+        fill="none" stroke="#ff7b72" stroke-width="1.5" stroke-opacity="0.4" stroke-linecap="round"/>
+
+  <!-- ATM point -->
+  <circle cx="165" cy="108" r="5" fill="#ff7b72" stroke="#0d1117" stroke-width="2"/>
+
+  <!-- 25-delta markers -->
+  <circle cx="100" cy="96" r="3.5" fill="#58a6ff" stroke="#0d1117" stroke-width="1.5"/>
+  <circle cx="240" cy="90" r="3.5" fill="#3fb950" stroke="#0d1117" stroke-width="1.5"/>
+
+  <!-- Parameter labels -->
+  <text x="55" y="70" fill="#ff7b72" font-family="sans-serif" font-size="9" font-weight="600" opacity="0.7">&alpha; level</text>
+  <text x="80" y="145" fill="#3fb950" font-family="sans-serif" font-size="9" font-weight="600" opacity="0.7">&rho; skew</text>
+  <text x="230" y="65" fill="#bc8cff" font-family="sans-serif" font-size="9" font-weight="600" opacity="0.7">&nu; wings</text>
+
+  <!-- Skew arrow -->
+  <path d="M95,138 Q130,125 155,112" fill="none" stroke="#3fb950" stroke-width="1" stroke-opacity="0.5" marker-end="url(#arrowGreen)"/>
+
+  <!-- Wing arrows -->
+  <path d="M250,70 Q260,75 270,72" fill="none" stroke="#bc8cff" stroke-width="1" stroke-opacity="0.5"/>
+
+  <!-- Y-axis label -->
+  <text x="18" y="108" fill="#6e7681" font-family="sans-serif" font-size="8" text-anchor="middle" transform="rotate(-90,18,108)">Implied Vol</text>
+
+  <!-- X-axis label -->
+  <text x="165" y="195" fill="#6e7681" font-family="sans-serif" font-size="8" text-anchor="middle">Strike</text>
+
+  <!-- Title -->
+  <text x="20" y="24" fill="#e6edf3" font-family="sans-serif" font-size="13" font-weight="600">SABR</text>
+  <text x="60" y="24" fill="#8b949e" font-family="sans-serif" font-size="10">Volatility Smile</text>
+
+  <!-- Legend -->
+  <circle cx="240" cy="18" r="2.5" fill="#58a6ff"/>
+  <text x="246" y="21" fill="#8b949e" font-family="sans-serif" font-size="8">25&Delta;P</text>
+  <circle cx="270" cy="18" r="2.5" fill="#3fb950"/>
+  <text x="276" y="21" fill="#8b949e" font-family="sans-serif" font-size="8">25&Delta;C</text>
+
+  <!-- Accent corner glow -->
+  <rect x="0" y="0" width="320" height="3" rx="12" fill="#ff7b72" opacity="0.6"/>
+</svg>

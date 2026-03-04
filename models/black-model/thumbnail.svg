@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" width="320" height="200">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#161b22"/>
+      <stop offset="100%" stop-color="#0d1117"/>
+    </linearGradient>
+    <linearGradient id="payoffGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f85149" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#f85149" stop-opacity="0.02"/>
+    </linearGradient>
+    <linearGradient id="profitGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3fb950" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#3fb950" stop-opacity="0.02"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="320" height="200" rx="12" fill="url(#bg)"/>
+  <rect width="320" height="200" rx="12" fill="none" stroke="#30363d" stroke-width="1"/>
+
+  <!-- Grid lines -->
+  <line x1="40" y1="40" x2="40" y2="170" stroke="#21262d" stroke-width="0.5"/>
+  <line x1="100" y1="40" x2="100" y2="170" stroke="#21262d" stroke-width="0.5"/>
+  <line x1="160" y1="40" x2="160" y2="170" stroke="#21262d" stroke-width="0.5"/>
+  <line x1="220" y1="40" x2="220" y2="170" stroke="#21262d" stroke-width="0.5"/>
+  <line x1="280" y1="40" x2="280" y2="170" stroke="#21262d" stroke-width="0.5"/>
+  <line x1="40" y1="70" x2="290" y2="70" stroke="#21262d" stroke-width="0.5"/>
+  <line x1="40" y1="105" x2="290" y2="105" stroke="#21262d" stroke-width="0.5"/>
+  <line x1="40" y1="140" x2="290" y2="140" stroke="#21262d" stroke-width="0.5"/>
+
+  <!-- Zero line -->
+  <line x1="40" y1="125" x2="290" y2="125" stroke="#30363d" stroke-width="1"/>
+
+  <!-- Strike vertical -->
+  <line x1="160" y1="40" x2="160" y2="170" stroke="#484f58" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="160" y="185" fill="#6e7681" font-family="sans-serif" font-size="9" text-anchor="middle">K</text>
+
+  <!-- Intrinsic payoff (hockey stick) - faded -->
+  <polyline points="40,125 160,125 280,60"
+            fill="none" stroke="#f85149" stroke-width="1.5" stroke-opacity="0.25"/>
+
+  <!-- P&L fill - loss region -->
+  <path d="M40,138 L200,138 L200,125 L40,125 Z" fill="#f85149" fill-opacity="0.06"/>
+
+  <!-- P&L fill - profit region -->
+  <path d="M200,125 L280,73 L280,125 Z" fill="url(#profitGrad)"/>
+
+  <!-- P&L curve (payoff minus premium) -->
+  <polyline points="40,138 160,138 280,73"
+            fill="none" stroke="#f85149" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Premium arrow -->
+  <line x1="100" y1="125" x2="100" y2="138" stroke="#ff7b72" stroke-width="1" stroke-dasharray="2,2"/>
+  <text x="105" y="135" fill="#ff7b72" font-family="sans-serif" font-size="8" font-style="italic">premium</text>
+
+  <!-- Breakeven marker -->
+  <circle cx="200" cy="125" r="3" fill="#3fb950" stroke="#0d1117" stroke-width="1.5"/>
+  <text x="200" y="118" fill="#3fb950" font-family="sans-serif" font-size="8" text-anchor="middle">B/E</text>
+
+  <!-- Put P&L dashed -->
+  <polyline points="40,73 160,138 280,138"
+            fill="none" stroke="#58a6ff" stroke-width="1.5" stroke-dasharray="5,3" stroke-opacity="0.6"/>
+
+  <!-- Title -->
+  <text x="20" y="24" fill="#e6edf3" font-family="sans-serif" font-size="13" font-weight="600">Black-76</text>
+  <text x="90" y="24" fill="#8b949e" font-family="sans-serif" font-size="10">Option Payoff</text>
+
+  <!-- Legend -->
+  <line x1="230" y1="19" x2="244" y2="19" stroke="#f85149" stroke-width="2"/>
+  <text x="248" y="22" fill="#8b949e" font-family="sans-serif" font-size="8">Call</text>
+  <line x1="268" y1="19" x2="282" y2="19" stroke="#58a6ff" stroke-width="1.5" stroke-dasharray="3,2"/>
+  <text x="286" y="22" fill="#8b949e" font-family="sans-serif" font-size="8">Put</text>
+
+  <!-- Accent corner glow -->
+  <rect x="0" y="0" width="320" height="3" rx="12" fill="#f85149" opacity="0.6"/>
+</svg>

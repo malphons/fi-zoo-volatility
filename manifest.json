@@ -1,0 +1,38 @@
+{
+  "spoke_id": "volatility",
+  "label": "Volatility Models",
+  "models": [
+    {
+      "id": "black-model",
+      "name": "Black Model (Black-76)",
+      "short_description": "Adapts Black-Scholes to price options on forwards and futures — the market standard for quoting interest rate option volatilities.",
+      "family": "volatility",
+      "subcategory": "lognormal",
+      "tags": ["black-76", "log-normal", "implied-vol", "closed-form", "market-standard"],
+      "year_introduced": 1976,
+      "key_paper": "Black (1976)",
+      "complexity": "foundational",
+      "color_accent": "#f85149",
+      "formula": "C = e^(-rT)[FN(d1) - KN(d2)]",
+      "products": ["caps/floors", "swaptions", "bond options"],
+      "related_models": ["sabr", "lmm"],
+      "key_insight": "The model provides a common volatility language for the market."
+    },
+    {
+      "id": "sabr",
+      "name": "SABR Model",
+      "short_description": "A stochastic volatility model capturing the smile/skew through correlated forward rate and volatility dynamics.",
+      "family": "volatility",
+      "subcategory": "stochastic",
+      "tags": ["stochastic-vol", "smile", "skew", "hagan", "alpha-beta-rho-nu"],
+      "year_introduced": 2002,
+      "key_paper": "Hagan et al. (2002)",
+      "complexity": "advanced",
+      "color_accent": "#f85149",
+      "formula": "dF = \u03c3\u0302F^\u03b2 dW1, d\u03c3\u0302 = \u03bd\u03c3\u0302 dW2",
+      "products": ["swaptions", "caps/floors", "CMS spread options"],
+      "related_models": ["black-model", "lmm"],
+      "key_insight": "Four parameters (\u03b1,\u03b2,\u03c1,\u03bd) capture the entire vol surface dynamics."
+    }
+  ]
+}
